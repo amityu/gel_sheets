@@ -7,7 +7,7 @@ import glob
 import os
 import re
 # Data to be written
-DATA_PATH = '/mnt/d/Gel_Sheet_Data/sample1/'
+DATA_PATH = 'D:/Gel_Sheet_Data/movie60/raw_data/'
 '''
 files = glob.glob(DATA_PATH +'*/*', recursive=True)
 for file in files:
@@ -32,9 +32,9 @@ for file in files:
 
 #images = pims.ImageSequenceND([DATA_PATH + 'image_t30_C1_y10000.tif', DATA_PATH + 'image_t30_C1_y10001.tif',
 #                               DATA_PATH + 'image_t31_C1_y10000.tif', DATA_PATH + 'image_t31_C1_y10001.tif'], axes_identifiers = 'tC')
-images = pims.ImageSequenceND(DATA_PATH + '*/*.tif', axes_identifiers = 'tcz')
-#images = pims.ImageSequenceND(files, axes_identifiers = 'tcz')
-
+images = pims.ImageSequenceND(DATA_PATH + '*.tif', axes_identifiers = 't')
+#images = pims.ImageSequenceND(files, axes_identifiers = 't')
+images.bundle_axes = 'tcyx'
 print(images.frame_shape)
 print()
 
@@ -50,3 +50,12 @@ json_object = json.dumps(dictionary, indent=4)
 with open(DATA_PATH + "global/movie1.json", "w") as outfile:
     outfile.write(json_object)
 '''
+
+#%%
+i = np.copy(images)
+
+#%%
+plt.imshow(images[0][0][0])
+plt.show()
+#%%
+images[0][0][0]
