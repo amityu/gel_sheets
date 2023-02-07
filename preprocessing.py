@@ -41,7 +41,7 @@ def convert_to_np():
     images = pims.ImageSequenceND(MOVIE_PATH + 'raw_data/*.tif', axes_identifiers ='TC')
     images.bundle_axes = 'Tcyx'
     gel = np.copy(images)[0]
-    np.moveaxis(gel, 1, 3)
+    gel = np.moveaxis(gel, 1, 3)
     np.save(MOVIE_PATH + 'np/gel.npy', gel)
 
 
