@@ -6,8 +6,10 @@ import pims
 import glob
 import os
 import re
+from scipy.ndimage import gaussian_filter
+
 # Data to be written
-DATA_PATH = 'D:/Gel_Sheet_Data/'
+DATA_PATH = 'C:/Gel_Sheet_Data/'
 MOVIE_PATH = DATA_PATH +'movie60/'
 
 
@@ -34,14 +36,13 @@ def remove_files():
 
 def convert_to_np():
     """
-    saves gel numpy file axes t,y,x, z
+    saves gel numpy file axes t,z, y,x
 
     :return:
     """
     images = pims.ImageSequenceND(MOVIE_PATH + 'raw_data/*.tif', axes_identifiers ='TC')
     images.bundle_axes = 'Tcyx'
     gel = np.copy(images)[0]
-    gel = np.moveaxis(gel, 1, 3)
     np.save(MOVIE_PATH + 'np/gel.npy', gel)
 
 
@@ -63,3 +64,22 @@ def get_json(movie_name):
     f = open(DATA_PATH + 'global/' + movie_name + '.json')
 
     return json.load(f)
+
+
+def set_nan(gel, threshold):
+    for t in range(len(gel)):
+        time_point = gel[t]
+    bg = gaussian_filter(np.mean(time_point[:, :, :], axis=2), 25)
+    imstack_bg = np.zeros(time_point.shape)
+    h = np.zeros(gel.shape[1:3], dtype=int)
+    for i in range(h.shape[0]):
+        for j in range(h.shape[1]):
+            top = np.where(imstack_bg[i, j, :] > threshold)
+            if len(top) == 0 or len(top[0]) == 0:
+                h[i, j] = 0
+
+            else:
+                h[i, j] = top[0][-1]
+            gel[t, i, j, h[i, j] + 1:] = np.nan
+    return gel
+
