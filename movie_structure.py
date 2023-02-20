@@ -15,3 +15,15 @@ class Movie:
             return self.gel[time, :, position, :]
 
 
+class Vplane:
+    def __init__(self, data, mask):
+        self.data = data
+        self.mask = mask
+        self.height = np.zeros(self.data.shape[1])
+
+    def set_height(self):
+        for x in range(len(self.height)):
+            self.height[x] = np.nonzero(self.mask[:, x])[0][-1]
+        return self.height
+
+
