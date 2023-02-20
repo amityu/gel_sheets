@@ -23,7 +23,9 @@ class Vplane:
 
     def set_height(self):
         for x in range(len(self.height)):
-            self.height[x] = np.nonzero(self.mask[:, x])[0][-1]
+            try:
+                self.height[x] = np.nonzero(self.mask[:, x])[0][-1]
+            except:
+                return np.zeros(self.data.shape[1])
+
         return self.height
-
-
