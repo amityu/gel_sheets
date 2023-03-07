@@ -7,11 +7,14 @@ import glob
 import os
 import re
 from scipy.ndimage import gaussian_filter
+import importlib
+from tqdm.notebook import trange, tqdm
+
 
 # Data to be written
-DATA_PATH = 'C:/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH +'movie60/'
-
+DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
+MOVIE_PATH = DATA_PATH +'NewC1/'
+GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 
 def rename_files():
 
@@ -40,8 +43,10 @@ def convert_to_np():
 
     :return:
     """
-    images = pims.ImageSequenceND(MOVIE_PATH + 'raw_data/*.tif', axes_identifiers ='TC')
-    images.bundle_axes = 'Tcyx'
+    # images = pims.ImageSequenceND(MOVIE_PATH + 'raw_data/T1_C1_cmle.ics', axes_identifiers ='TC')
+    images = pims.open(MOVIE_PATH + 'raw_data/T1_C1_cmle.ics')
+    # , axes_identifiers ='TC')
+    # images.bundle_axes = 'Tcyx'
     gel = np.copy(images)[0]
     np.save(MOVIE_PATH + 'np/gel.npy', gel)
 
@@ -83,3 +88,22 @@ def set_nan(gel, threshold):
             gel[t, i, j, h[i, j] + 1:] = np.nan
     return gel
 
+
+def normalize_to_background(gel, tp_number, yz_axe, left_up, right_down):
+    gel = gel.astype('float32')
+    bg_level_zero = np.mean(gel[tp_number,left_up[0]:right_down[0],left_up[1]:right_down[1], yz_axe])
+    for t in trange(len(gel)):
+        tp = gel[t].copy()
+        for x in range(tp.shape[2]):
+
+            yz = tp[:,:,x].copy()
+            yz_bg_mean = np.mean(yz[left_up[0]:right_down[0],left_up[1]:right_down[1]])
+            yz -= (yz_bg_mean - bg_level_zero)
+            tp[:, :, x] = yz
+        gel[t] = tp
+    gel = (gel-gel.min()).astype('uint32')
+    gel[:, 0:20, :, :] = gel[:, -20:, :, :].copy()
+    return gel
+
+
+#%%
