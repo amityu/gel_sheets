@@ -22,37 +22,53 @@ class Vplane:
         self.data = data
         self.mask = mask
         self.height = np.zeros(self.data.shape[1])
+        self.square_height_deviation = np.zeros(self.data.shape[1])
 
     def set_height(self):
         for x in range(len(self.height)):
             try:
                 self.height[x] = np.nonzero(self.mask[:, x])[0][-1] - np.nonzero(self.mask[:, x])[0][0]
             except:
-                return np.zeros(self.data.shape[1])
+                self.height[x] = np.nan
 
         return self.height
+
+
+    ''' needs to be called after set height'''
+    def set_square_height_deviation(self):
+        mean_height = np.nanmean(self.height)
+        for x in range(len(self.height)):
+            try:
+                self.square_height_deviation[x] = (mean_height - self.height[x])**2
+            except:
+                self.square_height_deviation[x] = np.nan
+        return self.square_height_deviation
+        r
 
 
 class TimePoint:
     def __init__(self, data, mask = np.nan):
 
-        self.data = data
-        self.mask = mask
-        self.height = np.zeros(self.data[0].shape)
+        self.planes_list = []
+        for x in range(data.shape[1]):
+            self.planes_list.append(Vplane(data[:,:,x], mask=mask[:,:,x]))
 
-    def set_height(self):
+        self.height_profile = np.zeros(len(self.planes_list))
+        self.square_height_deviation = np.zeros(len(self.planes_list))
 
-        flat = self.data.reshape(-1)[1:-1:10]
-        hist, bins = np.histogram(flat, density=True)
+    def set_height_profile(self):
 
-        min_intensity = bins[1]
-        max_intensity = 10000
-        segment_tp = gaussian(self.data,3)
-        segment_tp[segment_tp<min_intensity] =0
-        segment_tp[segment_tp>max_intensity] = 0
-        segment_tp[np.bitwise_and(segment_tp>= min_intensity , segment_tp<= max_intensity)] =1
-        for y in range(self.data.shape[1]):
-            vp = Vplane(segment_tp[:, y, :], segment_tp[:, y, :])
-            self.height[y] = vp.set_height()
+        for y in range(len(self.planes_list)):
+            self.height_profile[y] = np.nanmean(self.planes_list[y].set_height())
+            #self.square_height_deviation[y] = np.nanmean(self.planes_list[y].set_height())
 
-        return self.height
+        return self.height_profile
+
+    # return squares of deviation from mean
+    def set_height_deviation_profile(self):
+
+        for y in range(len(self.planes_list)):
+            self.square_height_deviation[y] = np.nanmean(self.planes_list[y].set_square_height_deviation())
+
+        return self.square_height_deviation
+
