@@ -1,5 +1,24 @@
 import numpy as np
 from  skimage.filters import gaussian
+from scipy.ndimage import convolve
+
+def curvature(surface):
+    # Compute the partial derivatives of the surface using convolution
+    dx = convolve(surface, np.array([[-1, 0, 1]]), mode='constant')
+    dy = convolve(surface, np.array([[-1], [0], [1]]), mode='constant')
+    dxx = convolve(dx, np.array([[-1, 0, 1]]), mode='constant')
+    dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant')
+    dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant')
+
+    # Compute the normal vectors
+    normal_x = -dx / np.sqrt(dx**2 + dy**2 + 1e-10)
+    normal_y = -dy / np.sqrt(dx**2 + dy**2 + 1e-10)
+    normal_z = 1 / np.sqrt(dx**2 + dy**2 + 1e-10)
+
+    # Compute the curvature
+    curvature = (dxx * dyy - dxy**2) / (1 + dx**2 + dy**2)**1.5
+
+    return curvature
 
 
 class Movie:
@@ -55,12 +74,18 @@ class TimePoint:
 
         self.height_profile = np.zeros(len(self.planes_list))
         self.square_height_deviation = np.zeros(len(self.planes_list))
+        self.height = np.zeros((data.shape[1], data.shape[2]))
+    def set_height_surface(self):
+        for y in range(len(self.planes_list)):
+            self.height[y] = self.planes_list[y].set_height()
+
+        return self.height
 
     def set_height_profile(self):
 
         for y in range(len(self.planes_list)):
             self.height_profile[y] = np.nanmean(self.planes_list[y].set_height())
-            #self.square_height_deviation[y] = np.nanmean(self.planes_list[y].set_height())
+
 
         return self.height_profile
 
@@ -71,4 +96,8 @@ class TimePoint:
             self.square_height_deviation[y] = np.nanmean(self.planes_list[y].set_square_height_deviation())
 
         return self.square_height_deviation
+
+    def get_curvature_profile(self):
+        c = curvature(self.height)
+        return np.nanmean(np.abs(c), axis=1)
 
