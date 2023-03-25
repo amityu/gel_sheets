@@ -1,6 +1,7 @@
 import numpy as np
 from  skimage.filters import gaussian
 from scipy.ndimage import convolve
+from scipy.ndimage import median_filter
 
 def curvature(surface):
     # Compute the partial derivatives of the surface using convolution
@@ -47,10 +48,12 @@ class Vplane:
         for x in range(len(self.height)):
             try:
                 self.height[x] = np.nonzero(self.mask[:, x])[0][-1] - np.nonzero(self.mask[:, x])[0][0]
+                #if self.height[x] == 0:
+                #    self.height[x] = np.nan
             except:
                 self.height[x] = np.nan
-
-        return self.height
+        self.height = median_filter(self.height, size=10)
+        return self.height, (self.height == np.nan).sum()
 
 
     ''' needs to be called after set height'''
@@ -69,7 +72,7 @@ class TimePoint:
     def __init__(self, data, mask = np.nan):
 
         self.planes_list = []
-        for x in range(data.shape[1]):
+        for x in range(data.shape[2]):
             self.planes_list.append(Vplane(data[:,:,x], mask=mask[:,:,x]))
 
         self.height_profile = np.zeros(len(self.planes_list))
@@ -77,17 +80,18 @@ class TimePoint:
         self.height = np.zeros((data.shape[1], data.shape[2]))
     def set_height_surface(self):
         for y in range(len(self.planes_list)):
-            self.height[y] = self.planes_list[y].set_height()
+            self.height[y] = self.planes_list[y].set_height()[0]
 
         return self.height
 
     def set_height_profile(self):
-
+        nan_count = 0
         for y in range(len(self.planes_list)):
-            self.height_profile[y] = np.nanmean(self.planes_list[y].set_height())
+            h, nans =   self.planes_list[y].set_height()
+            nan_count += nans
+            self.height_profile[y] = median_filter(np.nanmean(h), size=3)
 
-
-        return self.height_profile
+        return self.height_profile, nan_count
 
     # return squares of deviation from mean
     def set_height_deviation_profile(self):
