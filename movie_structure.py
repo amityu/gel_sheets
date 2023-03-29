@@ -2,6 +2,7 @@ import numpy as np
 from  skimage.filters import gaussian
 from scipy.ndimage import convolve
 from scipy.ndimage import median_filter
+from skimage.filters.rank import mean
 
 def curvature(surface):
     # Compute the partial derivatives of the surface using convolution
@@ -56,6 +57,9 @@ class Vplane:
         return self.height, (self.height == np.nan).sum()
 
 
+
+
+
     ''' needs to be called after set height'''
     def set_square_height_deviation(self):
         mean_height = np.nanmean(self.height)
@@ -101,7 +105,14 @@ class TimePoint:
 
         return self.square_height_deviation
 
+    def set_fixed_height(self, error = 12):
+        self.height = median_filter(self.height, size=5)
+        neighbourhood = np.array([[0,1,0],[1,0,1],[0,1,0]])
+        mean_height = mean(self.height.astype('uint16'), neighbourhood)
+        outliers = np.abs(self.height - mean_height) > error
+        self.height[outliers] = np.nan
+        return self.height, outliers.sum()
+
     def get_curvature_profile(self):
-        c = curvature(self.height)
-        return np.nanmean(np.abs(c), axis=1)
+        return curvature(self.height)
 
