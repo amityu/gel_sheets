@@ -105,7 +105,7 @@ class TimePoint:
 
         return self.square_height_deviation
 
-    def set_fixed_height(self, error = 12):
+    def set_fixed_height(self, error = 30):
         self.height = median_filter(self.height, size=5)
         neighbourhood = np.array([[0,1,0],[1,0,1],[0,1,0]])
         mean_height = mean(self.height.astype('uint16'), neighbourhood)
