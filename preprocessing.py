@@ -2,7 +2,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-import pims
+#import pims
 import glob
 import os
 import re
@@ -37,7 +37,7 @@ def remove_files():
             files.remove(file)
 
 
-def convert_to_np():
+'''def convert_to_np():
     """
     saves gel numpy file axes t,z, y,x
 
@@ -50,7 +50,7 @@ def convert_to_np():
     gel = np.copy(images)[0]
     np.save(MOVIE_PATH + 'np/gel.npy', gel)
 
-
+'''
 def make_json_file(movie_name):
 
     dictionary = {
