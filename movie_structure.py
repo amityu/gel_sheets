@@ -1,5 +1,4 @@
 import numpy as np
-from  skimage.filters import gaussian
 from scipy.ndimage import convolve
 from scipy.ndimage import median_filter
 from skimage.filters.rank import mean
@@ -12,13 +11,10 @@ def curvature(surface):
     dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant')
     dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant')
 
-    # Compute the normal vectors
-    normal_x = -dx / np.sqrt(dx**2 + dy**2 + 1e-10)
-    normal_y = -dy / np.sqrt(dx**2 + dy**2 + 1e-10)
-    normal_z = 1 / np.sqrt(dx**2 + dy**2 + 1e-10)
+
 
     # Compute the curvature
-    curvature = (dxx * dyy - dxy**2) / (1 + dx**2 + dy**2)**1.5
+    curvature = (dxx * dyy - dxy**2) / (1 + dx**2 + dy**2)**2
 
     return curvature
 
