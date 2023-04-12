@@ -16,7 +16,7 @@ def f(t):
     tp = movie_structure.TimePoint(gel[t], mask[t])
     tp.set_height_surface()
     print('Start', t)
-    height, nans = tp.set_fixed_height()
+    height, nans = tp.set_height_surface()
     height = height.reshape(-1)
 
     print('%d End with %d outliers' % (t, nans))

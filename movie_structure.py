@@ -45,8 +45,7 @@ class Vplane:
         for x in range(len(self.height)):
             try:
                 self.height[x] = np.nonzero(self.mask[:, x])[0][-1] - np.nonzero(self.mask[:, x])[0][0]
-                #if self.height[x] == 0:
-                #    self.height[x] = np.nan
+
             except:
                 self.height[x] = np.nan
         self.height = median_filter(self.height, size=10)
@@ -79,10 +78,12 @@ class TimePoint:
         self.square_height_deviation = np.zeros(len(self.planes_list))
         self.height = np.zeros((data.shape[1], data.shape[2]))
     def set_height_surface(self):
+        nans_count = 0
         for y in range(len(self.planes_list)):
-            self.height[y] = self.planes_list[y].set_height()[0]
-
-        return self.height
+            height, nans = self.planes_list[y].set_height()
+            nans_count += nans
+            self.height[y, :] = height
+        return self.height, nans_count
 
     def set_height_profile(self):
         nan_count = 0
