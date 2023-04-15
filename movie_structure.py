@@ -39,17 +39,19 @@ class Vplane:
         self.data = data
         self.mask = mask
         self.height = np.zeros(self.data.shape[1])
+        self.plate = np.zeros(self.data.shape[1])
         self.square_height_deviation = np.zeros(self.data.shape[1])
 
     def set_height(self):
         for x in range(len(self.height)):
             try:
                 self.height[x] = np.nonzero(self.mask[:, x])[0][-1] - np.nonzero(self.mask[:, x])[0][0]
-
+                self.plate[x] = np.nonzero(self.mask[:, x])[0][0]
             except:
                 self.height[x] = np.nan
+                self.plate[x] = np.nan
         self.height = median_filter(self.height, size=10)
-        return self.height, (self.height == np.nan).sum()
+        return self.height, self.plate, (self.height == np.nan).sum()
 
 
 
@@ -77,13 +79,15 @@ class TimePoint:
         self.height_profile = np.zeros(len(self.planes_list))
         self.square_height_deviation = np.zeros(len(self.planes_list))
         self.height = np.zeros((data.shape[1], data.shape[2]))
+        self.plate = np.zeros((data.shape[1], data.shape[2]))
     def set_height_surface(self):
         nans_count = 0
         for y in range(len(self.planes_list)):
-            height, nans = self.planes_list[y].set_height()
+            height, plate, nans = self.planes_list[y].set_height()
             nans_count += nans
             self.height[y, :] = height
-        return self.height, nans_count
+            self.plate[y, :] = plate
+        return self.height, self.plate, nans_count
 
     def set_height_profile(self):
         nan_count = 0
