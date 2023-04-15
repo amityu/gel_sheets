@@ -45,8 +45,8 @@ class Vplane:
     def set_height(self):
         for x in range(len(self.height)):
             try:
-                self.height[x] = np.nonzero(self.mask[:, x])[0][-1] - np.nonzero(self.mask[:, x])[0][0]
-                self.plate[x] = np.nonzero(self.mask[:, x])[0][0]
+                self.height[x] = np.nonzero(self.mask[:,x])[0][-1] - np.nonzero(self.mask[:,x])[0][0]
+                self.plate[x] = np.nonzero(self.mask[:,x])[0][0]
             except:
                 self.height[x] = np.nan
                 self.plate[x] = np.nan
@@ -82,11 +82,11 @@ class TimePoint:
         self.plate = np.zeros((data.shape[1], data.shape[2]))
     def set_height_surface(self):
         nans_count = 0
-        for y in range(len(self.planes_list)):
-            height, plate, nans = self.planes_list[y].set_height()
+        for x in range(len(self.planes_list)):
+            height, plate, nans = self.planes_list[x].set_height()
             nans_count += nans
-            self.height[y, :] = height
-            self.plate[y, :] = plate
+            self.height[:,x] = height
+            self.plate[:,x] = plate
         return self.height, self.plate, nans_count
 
     def set_height_profile(self):
