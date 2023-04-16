@@ -5,11 +5,11 @@ from skimage.filters.rank import mean
 
 def curvature(surface):
     # Compute the partial derivatives of the surface using convolution
-    dx = convolve(surface, np.array([[-1, 0, 1]]), mode='constant')
-    dy = convolve(surface, np.array([[-1], [0], [1]]), mode='constant')
-    dxx = convolve(dx, np.array([[-1, 0, 1]]), mode='constant')
-    dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant')
-    dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant')
+    dx = convolve(surface, np.array([[-1, 0, 1]]), mode='constant', method= 'direct')
+    dy = convolve(surface, np.array([[-1], [0], [1]]), mode='constant', method= 'direct'    )
+    dxx = convolve(dx, np.array([[-1, 0, 1]]), mode='constant', method= 'direct')
+    dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant', method= 'direct')
+    dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant', method= 'direct')
 
 
 
