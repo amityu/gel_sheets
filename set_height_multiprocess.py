@@ -9,7 +9,7 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 MOVIE_PATH = DATA_PATH +'Control 050721/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r+')
-mask = np.load(MOVIE_PATH +'np/open_mask.npy', mmap_mode='r+')
+mask = np.load(MOVIE_PATH +'tmp/maskplan.npy', mmap_mode='r+')
 
 
 def f(t):
