@@ -15,8 +15,7 @@ from skimage import filters
 
 #%%
 ''' note change in file directory'''
-gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r+')
-
+gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r')
 
 def x(t):
     print('proces %d starts'%t)
@@ -34,7 +33,7 @@ def x(t):
             z_line[z_line>max_intensity] = 0
             z_line[np.bitwise_and(z_line>= min_intensity , z_line<= max_intensity)] =1
             tp_mask[:,i,j] = z_line'''
-        plane = gel_time_point[:,i,:]
+        plane = gel_time_point[:,i,:].copy()
         min_intensity = filters.threshold_li(plane)
         plane[plane < min_intensity] =0
         plane[plane>max_intensity] = 0
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     df = df.sort_values('order')
     df = df.drop(columns=['order'])
 
-    mask = df.to_numpy().reshape((len(order), gel.shape[1], gel.shape[2], gel.shape[3]))
+    mask = df.to_numpy().reshape((len(order), gel.shape[1], gel.shape[2], gel.shape[3])).astype(bool)
     #save the mask
     np.save(MOVIE_PATH + 'tmp/maskplan.npy', mask)
 

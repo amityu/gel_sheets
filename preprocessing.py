@@ -1,15 +1,20 @@
-import json
-import matplotlib.pyplot as plt
+mport json
 import numpy as np
-from tqdm import tqdm
 #import pims
 import glob
 import os
 import re
 from scipy.ndimage import gaussian_filter
-import importlib
-from tqdm.notebook import trange, tqdm
+from tqdm.notebook import trange
+# import pims
+import glob
+import json
+import os
+import re
 
+import numpy as np
+from scipy.ndimage import gaussian_filter
+from tqdm.notebook import trange
 
 # Data to be written
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
@@ -90,7 +95,6 @@ def set_nan(gel, threshold):
 
 
 def normalize_to_background(gel, tp_number, yz_axe, left_up, right_down):
-    gel = gel.astype('float32')
     bg_level_zero = np.mean(gel[tp_number,left_up[0]:right_down[0],left_up[1]:right_down[1], yz_axe])
     for t in trange(len(gel)):
         tp = gel[t].copy()
@@ -101,7 +105,7 @@ def normalize_to_background(gel, tp_number, yz_axe, left_up, right_down):
             yz -= (yz_bg_mean - bg_level_zero)
             tp[:, :, x] = yz
         gel[t] = tp
-    gel = (gel-gel.min()).astype('uint32')
+    gel = (gel-gel.min()).astype('uint16')
     gel[:, 0:20, :, :] = gel[:, -20:, :, :].copy()
     return gel
 
