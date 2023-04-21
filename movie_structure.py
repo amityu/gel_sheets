@@ -3,13 +3,15 @@ from scipy.ndimage import convolve
 from scipy.ndimage import median_filter
 from skimage.filters.rank import mean
 
-def curvature(surface):
+
+def gaussian_curvature(surface):
+
     # Compute the partial derivatives of the surface using convolution
-    dx = convolve(surface, np.array([[-1, 0, 1]]), mode='constant', method= 'direct')
-    dy = convolve(surface, np.array([[-1], [0], [1]]), mode='constant', method= 'direct'    )
-    dxx = convolve(dx, np.array([[-1, 0, 1]]), mode='constant', method= 'direct')
-    dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant', method= 'direct')
-    dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant', method= 'direct')
+    dx = convolve(surface, np.array([[-1, 0, 1]]), mode='constant')
+    dy = convolve(surface, np.array([[-1], [0], [1]]), mode='constant')
+    dxx = convolve(dx, np.array([[-1, 0, 1]]), mode='constant')
+    dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant')
+    dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant')
 
 
 
@@ -17,6 +19,22 @@ def curvature(surface):
     curvature = (dxx * dyy - dxy**2) / (1 + dx**2 + dy**2)**2
 
     return curvature
+
+
+def mean_curvature(surface):
+    # Compute the partial derivatives of the surface using convolution
+    dx = convolve(surface, np.array([[-1, 0, 1]]), mode='constant')
+    dy = convolve(surface, np.array([[-1], [0], [1]]), mode='constant')
+    dxx = convolve(dx, np.array([[-1, 0, 1]]), mode='constant')
+    dyy = convolve(dy, np.array([[-1], [0], [1]]), mode='constant')
+    dxy = convolve(dx, np.array([[-1], [0], [1]]), mode='constant')
+
+
+
+    # Compute the curvature
+    mean_c = 0.5*((1 + dx**2) * dyy - 2 * dx*dy*dxy + (1+dy**2)*dxx) / (1 + dx**2 + dy**2)**1.5
+
+    return mean_c
 
 
 class Movie:
@@ -115,5 +133,5 @@ class TimePoint:
         return self.height, outliers.sum()
 
     def get_curvature_profile(self):
-        return curvature(self.height)
+        return gaussian_curvature(self.height)
 
