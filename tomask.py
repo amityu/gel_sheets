@@ -2,7 +2,7 @@
 
 #%%
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH + 'Control 050721/'
+MOVIE_PATH = DATA_PATH + 'CCA60/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 from multiprocessing import Pool
 
@@ -11,11 +11,45 @@ import pandas as pd
 from skimage import filters
 
 ''' each line across z is thresholded and segmented separately with LI threshold method based on entropy minimization'''
-
-
+from scipy.ndimage import gaussian_filter as gaussian
+from skimage.filters import threshold_mean
 #%%
 ''' note change in file directory'''
 gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r')
+# import morpology for skimage
+#morpology close gel
+
+'''m_gel = gel[15:25].copy()
+
+for t in trange(len(m_gel)):
+    m_gel[t] = morphology.closing(m_gel[t], morphology.ball(7))
+
+gel = m_gel'''
+
+def mask_bil_sobel(t):
+    max_intensity = 10000
+
+    print('proces %d starts'%t)
+    tp_mask = np.zeros(gel[t].shape)
+    gel_time_point = gel[t]
+
+    for i in range(gel_time_point.shape[1]):
+        image = gel_time_point[:,i,:].copy()
+
+        bilateral_filtered = filters.rank.mean_bilateral(image,np.ones((5,5)), s0=10, s1=10)
+        image = gaussian(bilateral_filtered, 3)
+        '''edges = filters.sobel(image)'''
+        plane = image
+        min_intensity = threshold_mean(plane)
+        plane[plane < min_intensity] =0
+        plane[plane>max_intensity] = 0
+        plane[np.bitwise_and(plane>= min_intensity , plane<= max_intensity)] =1
+        tp_mask[:,i,:] = plane
+
+    print('proces %d ends'%t)
+
+    return [t,tp_mask]
+
 
 def x(t):
     print('proces %d starts'%t)
@@ -46,13 +80,17 @@ def x(t):
 
 #%%
 
+method = 'bil_sobel'
 
 if __name__ == '__main__':
     mask_list = []
     order = []
     with Pool(processes=10) as pool:
+        if method == 'bil_sobel':
+            results = pool.map(mask_bil_sobel, range(len(gel)))
+        else:
+            results = pool.map(x, range(len(gel)))
 
-        results = pool.map(x, range(len(gel)))
 
     for result in results:
         order.append(result[0])
@@ -68,5 +106,6 @@ if __name__ == '__main__':
 
     mask = df.to_numpy().reshape((len(order), gel.shape[1], gel.shape[2], gel.shape[3])).astype(bool)
     #save the mask
-    np.save(MOVIE_PATH + 'tmp/maskplan.npy', mask)
+    mask[:,0:15,:,:] = False
+    np.save(MOVIE_PATH + 'np/mask.npy', mask)
 

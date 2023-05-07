@@ -99,7 +99,6 @@ def normalize_to_background(gel, tp_number, yz_axe, left_up, right_down):
             tp[:, :, x] = yz
         gel[t] = tp
     gel = (gel-gel.min()).astype('uint16')
-    gel[:, 0:20, :, :] = gel[:, -20:, :, :].copy()
     return gel
 
 

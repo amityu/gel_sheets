@@ -6,10 +6,10 @@ import pandas as pd
 import movie_structure
 
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH +'Control 050721/'
+MOVIE_PATH = DATA_PATH +'CCA60/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r+')
-mask = np.load(MOVIE_PATH +'tmp/maskplan.npy', mmap_mode='r+')
+mask = np.load(MOVIE_PATH +'np/mask.npy', mmap_mode='r+')
 
 
 def f(t):
@@ -48,10 +48,10 @@ if __name__ == '__main__':
     df = df.sort_values('order')
     df2 = df2.sort_values('order')
     df4 = df4.sort_values('order')
-
-    df.to_csv(MOVIE_PATH + 'height.csv')
-    df2.to_csv(MOVIE_PATH + 'plate.csv')
-    df4.to_csv(MOVIE_PATH + 'nan.csv')
+    data = df.drop(['order'],axis=1).to_numpy()
+    np.save(MOVIE_PATH + 'np/height.npy', data)
+    data = df2.drop(['order'],axis=1).to_numpy()
+    np.save(MOVIE_PATH + 'np/plate.npy', data)
 
 
 
