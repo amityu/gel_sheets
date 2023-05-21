@@ -10,8 +10,8 @@ import jpype
 
 ij = imagej.init('C:\Fiji.app')
 
-inputDirectory = "C:/Users/amityu/Gel_Sheet_Data/100621/C1";
-outputDirectory = "C:/Users/amityu/Gel_Sheet_Data/100621/tif/";
+inputDirectory = "C:/Users/amityu/Gel_Sheet_Data/150721/C1";
+outputDirectory = "C:/Users/amityu/Gel_Sheet_Data/150721/tif/";
 
 
 #get file list in input directory

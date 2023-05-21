@@ -35,7 +35,23 @@ def mean_curvature(surface):
 class Movie:
 
     def __init__(self, gel_json):
-        self.gel = np.load(gel_json['data_path'] + 'np/gel.npy', mmap_mode='r')
+        self.gel = np.load(gel_json['data_path'] + 'np/gel_norm.npy', mmap_mode='r')
+        self.tp_list = []
+        for t in range(self.gel.shape[0]):
+            self.tp_list.append(TimePoint(self.gel[t, :, :, :]))
+
+    @classmethod
+    def from_plate_and_height(cls, gel_json):
+        plate = np.load(gel_json['data_path'] + 'np/plate.npy').reshape(-1, 512, 512)
+        height = np.load(gel_json['data_path'] + 'np/height.npy').reshape(-1, 512, 512)
+        m = cls(gel_json)
+        t = 0
+        for tp in m.tp_list:
+            tp.plate = plate[t]
+            tp.height = height[t]
+            t += 1
+        return m
+
 
     def get_plane(self, orientation, time, position):
         if orientation == 'xy':
@@ -80,13 +96,22 @@ class TimePoint:
     def __init__(self, data, mask=np.nan):
 
         self.planes_list = []
-        for x in range(data.shape[2]):
-            self.planes_list.append(Vplane(data[:, :, x], mask=mask[:, :, x]))
+        if mask is not np.nan:
+            for x in range(data.shape[2]):
+                self.planes_list.append(Vplane(data[:, :, x], mask=mask[:, :, x]))
 
         self.height_profile = np.zeros(len(self.planes_list))
         self.square_height_deviation = np.zeros(len(self.planes_list))
         self.height = np.zeros((data.shape[1], data.shape[2]))
         self.plate = np.zeros((data.shape[1], data.shape[2]))
+        self.data = data
+
+    @classmethod
+    def from_plate_and_height(cls, data, plate, height):
+        tp = cls(data)
+        tp.plate = plate
+        tp.height = height
+        return tp
 
     def set_height_surface(self):
         nans_count = 0
@@ -124,3 +149,24 @@ class TimePoint:
 
     def get_curvature_profile(self):
         return gaussian_curvature(self.height)
+
+    def get_height_plane(self):
+        plane = np.zeros((self.data.shape[1], self.data.shape[2]))
+        for i in range(self.data.shape[1]):
+            for j in range(self.data.shape[2]):
+                if np.isnan([self.plate[i, j], self.height[i, j]]).any():
+                    plane[i, j] = np.nan
+                else:
+                    plane[i, j] = self.data[int(self.height[i, j] + self.plate[i, j]), i, j]
+        return plane
+
+    def get_plate_plane(self):
+        plane = np.zeros((self.data.shape[1], self.data.shape[2]))
+        for i in range(self.data.shape[1]):
+            for j in range(self.data.shape[2]):
+                if np.isnan(self.plate[i, j]):
+                    plane[i, j] = np.nan
+                else:
+                    plane[i, j] = self.data[int(self.plate[i, j]), i, j]
+        return plane
+

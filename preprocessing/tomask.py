@@ -2,7 +2,7 @@
 
 #%%
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH + '100621/'
+MOVIE_PATH = DATA_PATH + '140721/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 from multiprocessing import Pool
 
@@ -26,7 +26,7 @@ for t in trange(len(m_gel)):
 
 gel = m_gel'''
 
-def mask_bil_sobel(t):
+def billateral(t):
     max_intensity = 10000
 
     print('proces %d starts'%t)
@@ -80,14 +80,15 @@ def x(t):
 
 #%%
 
-method = 'original li'
+#method = 'original li'
+method = 'billateral'
 
 if __name__ == '__main__':
     mask_list = []
     order = []
     with Pool(processes=10) as pool:
-        if method == 'bil_sobel':
-            results = pool.map(mask_bil_sobel, range(len(gel)))
+        if method == 'billateral':
+            results = pool.map(billateral, range(len(gel)))
         elif method == 'original li':
             results = pool.map(x, range(len(gel)))
 
