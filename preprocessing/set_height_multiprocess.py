@@ -8,8 +8,8 @@ from objects import movie_structure
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 MOVIE_PATH = DATA_PATH +'140721/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
-gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r+')
-mask = np.load(MOVIE_PATH +'np/mask.npy', mmap_mode='r+')
+gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r')
+mask = np.load(MOVIE_PATH +'np/mask.npy', mmap_mode='r')
 
 
 def f(t):

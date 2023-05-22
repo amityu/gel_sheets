@@ -12,7 +12,7 @@ from skimage import filters
 
 ''' each line across z is thresholded and segmented separately with LI threshold method based on entropy minimization'''
 from scipy.ndimage import gaussian_filter as gaussian
-from skimage.filters import threshold_mean
+from skimage.filters import threshold_mean, sobel
 #%%
 ''' note change in file directory'''
 gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r')
@@ -51,6 +51,31 @@ def billateral(t):
     return [t,tp_mask]
 
 
+def mask_sobel(t, end_z = 267, thresh = 1.6*10**-5):
+    max_intensity = 10000
+
+    print('proces %d starts'%t)
+    tp_mask = np.zeros(gel[t].shape)
+    gel_time_point = gel[t]
+
+    for i in range(gel_time_point.shape[1]):
+
+        image = gel_time_point[:end_z-20,i,:].copy()
+
+        image_cut = sobel(gaussian(image,5))
+
+        plane = image_cut
+        min_intensity = thresh
+        plane[plane < min_intensity] =0
+        plane[plane>max_intensity] = 0
+        plane[np.bitwise_and(plane>= min_intensity , plane<= max_intensity)] =1
+        tp_mask[:end_z-20,i,:] = plane
+        tp_mask[end_z-20:,i,:] = 0
+    print('proces %d ends'%t)
+
+    return [t,tp_mask]
+
+
 def x(t):
     print('proces %d starts'%t)
     tp_mask = np.zeros(gel[t].shape)
@@ -82,30 +107,34 @@ def x(t):
 
 #method = 'original li'
 method = 'billateral'
+#method = 'sobel'
+method_list = ['billateral', 'original li', 'sobel']
 
 if __name__ == '__main__':
-    mask_list = []
-    order = []
-    with Pool(processes=10) as pool:
-        if method == 'billateral':
-            results = pool.map(billateral, range(len(gel)))
-        elif method == 'original li':
-            results = pool.map(x, range(len(gel)))
+    for method in method_list:
+        mask_list = []
+        order = []
+        with Pool(processes=10) as pool:
+            if method == 'billateral':
+                results = pool.map(billateral, range(len(gel)))
+            elif method == 'original li':
+                results = pool.map(x, range(len(gel)))
+            elif method == 'sobel':
+                results = pool.map(mask_sobel, range(len(gel)))
 
+        for result in results:
+            order.append(result[0])
+            mask_list.append(result[1].astype(bool).reshape(-1))
 
-    for result in results:
-        order.append(result[0])
-        mask_list.append(result[1].astype(bool).reshape(-1))
+        df = pd.DataFrame(np.array(mask_list))
+        #don't add index to the dataframe
 
-    df = pd.DataFrame(np.array(mask_list))
-    #don't add index to the dataframe
+        df = pd.concat([pd.DataFrame(order, columns=['order']), df], axis=1)
 
-    df = pd.concat([pd.DataFrame(order, columns=['order']), df], axis=1)
+        df = df.sort_values('order')
+        df = df.drop(columns=['order'])
 
-    df = df.sort_values('order')
-    df = df.drop(columns=['order'])
-
-    mask = df.to_numpy().reshape((len(order), gel.shape[1], gel.shape[2], gel.shape[3])).astype(bool)
-    #save the mask
-    np.save(MOVIE_PATH + 'np/mask.npy', mask)
+        mask = df.to_numpy().reshape((len(order), gel.shape[1], gel.shape[2], gel.shape[3])).astype(bool)
+        #save the mask
+        np.save(MOVIE_PATH + 'np/mask_'+method + '.npy', mask)
 
