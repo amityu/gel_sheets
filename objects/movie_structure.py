@@ -38,7 +38,7 @@ class Movie:
         self.gel = np.load(gel_json['data_path'] + 'np/gel_norm.npy', mmap_mode='r')
         self.tp_list = []
         for t in range(self.gel.shape[0]):
-            self.tp_list.append(TimePoint(self.gel[t, :, :, :]))
+            self.tp_list.append(TimePoint(self.gel[t, :, :, :], time = t))
 
     @classmethod
     def from_plate_and_height(cls, gel_json):
@@ -93,7 +93,7 @@ class Vplane:
 
 
 class TimePoint:
-    def __init__(self, data, mask=np.nan):
+    def __init__(self, data, mask=np.nan, time = 0):
 
         self.planes_list = []
         if mask is not np.nan:
@@ -105,6 +105,7 @@ class TimePoint:
         self.height = np.zeros((data.shape[1], data.shape[2]))
         self.plate = np.zeros((data.shape[1], data.shape[2]))
         self.data = data
+        self.time = time
 
     @classmethod
     def from_plate_and_height(cls, data, plate, height):

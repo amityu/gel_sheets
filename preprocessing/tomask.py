@@ -2,7 +2,7 @@
 
 #%%
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH + '140721/'
+MOVIE_PATH = DATA_PATH + '150721/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 from multiprocessing import Pool
 
@@ -16,6 +16,7 @@ from skimage.filters import threshold_mean, sobel
 #%%
 ''' note change in file directory'''
 gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r')
+mask = np.zeros(gel.shape, dtype=bool)
 # import morpology for skimage
 #morpology close gel
 
@@ -55,7 +56,7 @@ def mask_sobel(t, end_z = 267, thresh = 1.6*10**-5):
     max_intensity = 10000
 
     print('proces %d starts'%t)
-    tp_mask = np.zeros(gel[t].shape)
+    tp_mask = mask[t]
     gel_time_point = gel[t]
 
     for i in range(gel_time_point.shape[1]):
@@ -78,7 +79,7 @@ def mask_sobel(t, end_z = 267, thresh = 1.6*10**-5):
 
 def x(t):
     print('proces %d starts'%t)
-    tp_mask = np.zeros(gel[t].shape)
+    tp_mask = mask[t]
 
     max_intensity = 10000
 
@@ -108,7 +109,7 @@ def x(t):
 #method = 'original li'
 method = 'billateral'
 #method = 'sobel'
-method_list = ['billateral', 'original li', 'sobel']
+method_list = ['sobel']
 
 if __name__ == '__main__':
     for method in method_list:

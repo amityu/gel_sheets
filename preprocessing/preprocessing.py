@@ -52,13 +52,13 @@ def remove_files():
 def make_json_file(movie_name):
 
     dictionary = {
-        'data_path': 'D:/Gel_Sheet_Data/' + movie_name,
+        'data_path': 'C:/Users/amityu/Gel_Sheet_Data/' + movie_name + '/',
         'name':  movie_name
     }
     json_object = json.dumps(dictionary, indent=4)
 
     # Writing to sample.json
-    with open(MOVIE_PATH + "global/movie_name", "w") as outfile:
+    with open(DATA_PATH + "global/%s.json"%movie_name, "w") as outfile:
         outfile.write(json_object)
 
 
@@ -98,7 +98,9 @@ def normalize_to_background(gel, tp_number, yz_axe, left_up, right_down):
             yz -= (yz_bg_mean - bg_level_zero)
             tp[:, :, x] = yz
         gel[t] = tp
-    gel = (gel-gel.min()).astype('uint16')
+
+
+    gel -= gel.min()
     return gel
 
 

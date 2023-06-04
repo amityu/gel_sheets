@@ -6,7 +6,7 @@ import pandas as pd
 from objects import movie_structure
 
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH +'140721/'
+MOVIE_PATH = DATA_PATH +'150721/'
 GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 gel = np.load(MOVIE_PATH +'np/gel_norm.npy', mmap_mode='r')
 mask = np.load(MOVIE_PATH +'np/mask.npy', mmap_mode='r')
@@ -49,9 +49,9 @@ if __name__ == '__main__':
     df2 = df2.sort_values('order')
     df4 = df4.sort_values('order')
     data = df.drop(['order'],axis=1).to_numpy()
-    np.save(MOVIE_PATH + 'np/height.npy', data)
+    np.save(MOVIE_PATH + 'np/height.npy', data.reshape((len(order), gel.shape[2], gel.shape[3])))
     data = df2.drop(['order'],axis=1).to_numpy()
-    np.save(MOVIE_PATH + 'np/plate.npy', data)
+    np.save(MOVIE_PATH + 'np/plate.npy', data.reshape((len(order), gel.shape[2], gel.shape[3])))
 
 
 
