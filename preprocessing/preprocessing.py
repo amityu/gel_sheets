@@ -50,11 +50,14 @@ def remove_files():
 
 '''
 def make_json_file(movie_name):
+    gel = np.load('C:/Users/amityu/Gel_Sheet_Data/' + movie_name + '/' + 'np/gel_norm.npy')
 
     dictionary = {
         'data_path': 'C:/Users/amityu/Gel_Sheet_Data/' + movie_name + '/',
-        'name':  movie_name
+        'name':  movie_name,
+        'length': len(gel)
     }
+
     json_object = json.dumps(dictionary, indent=4)
 
     # Writing to sample.json
