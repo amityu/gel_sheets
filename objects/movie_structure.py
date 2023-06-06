@@ -42,8 +42,8 @@ class Movie:
 
     @classmethod
     def from_plate_and_height(cls, gel_json):
-        plate = np.load(gel_json['data_path'] + 'np/plate.npy').reshape(-1, 512, 512)
-        height = np.load(gel_json['data_path'] + 'np/height.npy').reshape(-1, 512, 512)
+        plate = np.load(gel_json['data_path'] + 'np/plate.npy')#.reshape(-1, 512, 512)
+        height = np.load(gel_json['data_path'] + 'np/height.npy')#.reshape(-1, 512, 512)
         m = cls(gel_json)
         t = 0
         for tp in m.tp_list:
