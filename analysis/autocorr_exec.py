@@ -45,7 +45,7 @@ def make_local():
         print(movie)
         gel_data = load_json(DATA_PATH + 'global/%s.json'%movie)
         gel = movie_structure.Movie.from_plate_and_height(gel_data)
-        for tp in gel.tp_list[16:17]:
+        for tp in tqdm(gel.tp_list[24:-1:8]):
             for z in [0]:
                 try:
                     image = tp.data[z]
@@ -53,7 +53,8 @@ def make_local():
                     np.save(GRAPH_PATH + 'autocorr/%s_t=_%s_z=%s.npy'%(movie, tp.time, z), output_image)
                     plt.figure(figsize=(30, 30))
                     plt.imshow(output_image, vmin=-5, vmax=5, aspect='auto', origin='lower')
-                    plt.ylabel('Time', fontsize=40)
+                    plt.ylabel('y axis', fontsize=40)
+                    plt.xlabel('x axis', fontsize=40)
                     plt.colorbar()
                     plt.title('Autocorrelation of %s at t=%s, z=%s'%(movie, tp.time, z), fontsize=40)
                     plt.savefig(GRAPH_PATH + 'autocorr/%s_t=_%s_z=%s.png'%(movie, tp.time, z))
@@ -72,8 +73,8 @@ def make_moran():
         z_list = []
         moran_list = []
 
-        for tp in tqdm(gel.tp_list[0:-1:8]):
-            for z in range(1, 30 ,5):
+        for tp in tqdm(gel.tp_list[24:-1:8]):
+            for z in range(0,1):
                 try:
                     image = tp.data[z]
                     m = moranI(image)
