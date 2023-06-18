@@ -575,6 +575,80 @@ def plot_surface_theta(movie, j = 256, sigma = 5):
     plt.savefig(GRAPH_PATH + 'segmentation/' + movie + '_surface_theta.png')
     plt.show()
 
+def plot_height_of_x_at_t(movie, j = 256, sigma = 5):
+    #%%
+
+    surface = np.load(DATA_PATH + movie +'/np/height.npy')
+    data = np.zeros((len(surface), surface.shape[1]))
+    plt.figure(figsize=(30,30))
+    im = plt.imshow(surface[:,:,j])
+    height, width = surface[:,:,j].shape
+    aspect_ratio = width / height
+# Set the aspect ratio to stretch the image to a square
+    plt.gca().set_aspect(aspect_ratio)
+    #enlarge font of axes
+    plt.tick_params(axis='both', which='major', labelsize=30)
+    #inverse y axes
+    plt.gca().invert_yaxis()
+    plt.title('Surface t, x = %d gel = '%j + movie, fontsize=30)
+
+    cbar = plt.colorbar(im)
+    cbar.ax.tick_params(labelsize=16)  # Adjust the font size as desired
+    plt.xlabel('X', fontsize=30)
+    plt.ylabel('T', fontsize=30)
+    plt.savefig(GRAPH_PATH + 'height/' + movie + '_height_xt.png')
+    plt.show()
+
+
+def surface_animation_save(movie, sigma = 5):
+#%%
+#%%
+
+    import matplotlib.animation as animation
+
+# Generate some example 3D frames
+    surface= np.load(MOVIE_PATH + 'np/height.npy')
+    z_max = np.nanmax(surface)
+    x = np.arange(0, surface.shape[1])
+    y = np.arange(0, surface.shape[2])
+    X, Y = np.meshgrid(x, y)
+    num_frames= len(surface)
+
+    # Create a figure and axis
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    # Create an empty plot
+    plot = ax.imshow(surface[0], cmap='jet', animated=True)
+    cbar = plt.colorbar(plot)
+
+    # Update function for each frame
+    def update_frame(i):
+        Z = surface[i]
+        fix_surface(Z)
+        ax.clear()
+        ax.plot_surface(X, Y, Z,cmap='viridis', edgecolor='none')
+        #limit z to z_max
+        # set axes labels
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        ax.set_zlim(0, z_max)
+        ax.set_title('movie %s Time: %d' % (movie,i))
+
+        return plot,
+
+    # Create the animation
+    myanimation = animation.FuncAnimation(fig, update_frame, frames=num_frames, interval=300, blit=True)
+
+    # Display the animation
+
+    # Display the animation
+    writer = animation.FFMpegWriter(fps=30)
+
+    myanimation.save(GRAPH_PATH + 'surface/' + movie + '_surface.mp4', writer=writer)
+    print(movie + ' surface animation saved')
+    plt.show()
 
 
 def main():
@@ -586,6 +660,10 @@ def main():
         #plot_mean_carvature(movie, sigma= 5)
         #plot_mean_carvature(movie, sigma= 1)
         #plot_segmentation(movie, x = 256)
-        plot_surface_theta(movie, j=256, sigma=5)
+        #plot_surface_theta(movie, j=256, sigma=5)
+        #plot_height_of_x_at_t(movie, j=100, sigma=5)
+        surface_animation_save(movie, sigma=5)
+
+
 
 main()
