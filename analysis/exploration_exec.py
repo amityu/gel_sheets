@@ -513,12 +513,12 @@ def plot_segmentation(movie, x=256):
     gel = np.load(DATA_PATH +  movie + '/' + 'np/gel_norm.npy')
     surface = np.load(DATA_PATH +  movie + '/' + 'np/height.npy')
     plate = np.load(DATA_PATH +  movie + '/' + 'np/plate.npy')
-
-    fig, axes = plt.subplots(6, 1, figsize=(10,30))
+    surface = fix_surface(surface)
+    fig, axes = plt.subplots(11, 1, figsize=(10,30))
 
     row = 0
 
-    for t in range(0, len(gel), int(len(gel)/5)):
+    for t in range(18, 27):#, int(len(gel)/5)):
 
         zy = surface[t][:, x] + plate[t][:, x]
         zy_gel = gel[t][:, :, x]
@@ -584,7 +584,7 @@ def plot_height_of_x_at_t(movie, j = 256, sigma = 5):
     im = plt.imshow(surface[:,:,j])
     height, width = surface[:,:,j].shape
     aspect_ratio = width / height
-# Set the aspect ratio to stretch the image to a square
+    # Set the aspect ratio to stretch the image to a square
     plt.gca().set_aspect(aspect_ratio)
     #enlarge font of axes
     plt.tick_params(axis='both', which='major', labelsize=30)
@@ -607,12 +607,12 @@ def surface_animation_save(movie, sigma = 5):
     import matplotlib.animation as animation
 
 # Generate some example 3D frames
-    surface= np.load(MOVIE_PATH + 'np/height.npy')
+    surface= np.load(DATA_PATH + movie + '/np/height.npy')
     z_max = np.nanmax(surface)
     x = np.arange(0, surface.shape[1])
     y = np.arange(0, surface.shape[2])
     X, Y = np.meshgrid(x, y)
-    num_frames= len(surface)
+    num_frames=len(surface)
 
     # Create a figure and axis
     fig = plt.figure()
@@ -644,7 +644,7 @@ def surface_animation_save(movie, sigma = 5):
     # Display the animation
 
     # Display the animation
-    writer = animation.FFMpegWriter(fps=30)
+    writer = animation.FFMpegWriter(fps=5)
 
     myanimation.save(GRAPH_PATH + 'surface/' + movie + '_surface.mp4', writer=writer)
     print(movie + ' surface animation saved')
@@ -652,17 +652,17 @@ def surface_animation_save(movie, sigma = 5):
 
 
 def main():
-    for k in [0,1]:
+    for k in [1]:
         movie = movie_list[k]
         #plot_mean_height(movie)
         #plot_surface(movie)
         #surface_stat_save(movie, save_plot = True)
         #plot_mean_carvature(movie, sigma= 5)
         #plot_mean_carvature(movie, sigma= 1)
-        #plot_segmentation(movie, x = 256)
+        plot_segmentation(movie, x = 256)
         #plot_surface_theta(movie, j=256, sigma=5)
         #plot_height_of_x_at_t(movie, j=100, sigma=5)
-        surface_animation_save(movie, sigma=5)
+        #surface_animation_save(movie, sigma=5)
 
 
 
