@@ -5,15 +5,23 @@ import json
 import os
 import re
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from tqdm.notebook import trange
 
 # Data to be written
-DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-MOVIE_PATH = DATA_PATH +'NewC1/'
-GRAPH_PATH = 'C:Users/amityu/Gel_Sheet_Graph/'
 
+DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
+#movie = 'Control'
+#movie = '130721'
+#movie ='140721'
+#movie ='150721'
+#movie ='100621'
+movie ='130721_CCA60_RAW'
+
+MOVIE_PATH = DATA_PATH +  movie + '/'
+GRAPH_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/'
 def rename_files():
 
     files = glob.glob(MOVIE_PATH +'*/*', recursive=True)
@@ -108,3 +116,49 @@ def normalize_to_background(gel, tp_number, yz_axe, left_up, right_down):
 
 
 #%%
+#%%
+def max_z_animation(movie):
+    import matplotlib.animation as animation
+    gel = np.load(DATA_PATH + movie + '/np/gel.npy')
+    z_max_time = np.sum(~np.isnan(gel[:, :,0, 0]), axis=1)
+
+    gel[np.isnan(gel)] = 0
+    z_max_gel = np.max(gel)
+
+    frame_shape = gel[0,:,0,:].shape
+    num_frames = len(gel)
+    # Create a figure and axis
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111)
+
+    fig, ax = plt.subplots()
+
+
+
+    # Create an empty plot
+    plot = ax.imshow(np.zeros(frame_shape), cmap='jet', animated=True)
+
+    # Update function for each frame
+    def update_frame(i):
+
+        ax.clear()
+        for x in range(0,frame_shape[1],50):
+            image = gel[i,z_max_time[i]-40:z_max_time[i],:,x]
+            #replace nun with zero in image
+            ax.plot(np.max(image, axis=1), label = 'x = %d'%x)
+            ax.set_aspect(1)
+
+        ax.set_ylim(0, z_max_gel)
+        ax.set_xlim(0, 40)
+        ax.set_title('movie %s Frame: %d' % (movie,i))
+
+        return plot,
+
+    # Create the animation
+    myanimation = animation.FuncAnimation(fig, update_frame, frames=5, interval=300, blit=True)
+    writer = animation.FFMpegWriter(fps=5)
+
+    myanimation.save(GRAPH_PATH + 'preprocessing/' + movie + 'max_z.mp4', writer=writer)
+
+
+max_z_animation(movie)
