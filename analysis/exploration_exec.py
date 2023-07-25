@@ -10,10 +10,12 @@ movie = movie_list[0]
 
 MOVIE_PATH = DATA_PATH +  movie + '/'
 GRAPH_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/'
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy.ndimage import gaussian_filter
 from skimage.filters import gaussian
 from tqdm.notebook import trange, tqdm
 
@@ -600,14 +602,10 @@ def plot_height_of_x_at_t(movie, j = 256, sigma = 5):
     plt.show()
 
 
-def surface_animation_save(movie, sigma = 5):
-#%%
-#%%
-
-    import matplotlib.animation as animation
-
-# Generate some example 3D frames
-    surface= np.load(DATA_PATH + movie + '/np/height.npy')
+def surface_animation_save(movie, step_number, selem_radius, plot_sigma):
+    surface = np.load(DATA_PATH + movie + '/np/height%d_ball_radius%d.npy'%(step_number, selem_radius))
+    for t in range(len(surface)):
+        surface[t] = gaussian_filter(surface[t], sigma = plot_sigma )
     z_max = np.nanmax(surface)
     x = np.arange(0, surface.shape[1])
     y = np.arange(0, surface.shape[2])
@@ -624,9 +622,8 @@ def surface_animation_save(movie, sigma = 5):
     # Update function for each frame
     def update_frame(i):
         Z = surface[i]
-        fix_surface(Z)
         ax.clear()
-        ax.plot_surface(X, Y, Z,cmap='viridis', edgecolor='none')
+        ax.plot_surface(X, Y, Z, cmap='viridis', edgecolor='none')
         #limit z to z_max
         # set axes labels
         ax.set_xlabel('X')
@@ -634,19 +631,20 @@ def surface_animation_save(movie, sigma = 5):
         ax.set_zlabel('Z')
 
         ax.set_zlim(0, z_max)
-        ax.set_title('movie %s Time: %d' % (movie,i))
+        ax.set_title('movie %s Time: %d \n binning factor %d ball radius %d gaussian sigma %d' %
+                     (movie,i, int(surface.shape[1]/step_number), selem_radius, plot_sigma))
 
         return plot,
 
     # Create the animation
-    myanimation = animation.FuncAnimation(fig, update_frame, frames=num_frames, interval=300, blit=True)
+    myanimation = animation.FuncAnimation(fig, update_frame, frames=num_frames, interval=1000, blit=True)
 
     # Display the animation
 
     # Display the animation
-    writer = animation.FFMpegWriter(fps=5)
+    writer = animation.FFMpegWriter(fps=1)
 
-    myanimation.save(GRAPH_PATH + 'surface/' + movie + '_surface.mp4', writer=writer)
+    myanimation.save(GRAPH_PATH + 'surface/' + movie + '_surface%d_%d_%d.mp4'%(step_number, selem_radius, plot_sigma  ), writer=writer)
     print(movie + ' surface animation saved')
     plt.show()
 
@@ -659,11 +657,11 @@ def main():
         #surface_stat_save(movie, save_plot = True)
         #plot_mean_carvature(movie, sigma= 5)
         #plot_mean_carvature(movie, sigma= 1)
-        plot_segmentation(movie, x = 256)
+        #plot_segmentation(movie, x = 256)
         #plot_surface_theta(movie, j=256, sigma=5)
         #plot_height_of_x_at_t(movie, j=100, sigma=5)
         #surface_animation_save(movie, sigma=5)
 
 
 
-main()
+#main()
