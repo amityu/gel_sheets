@@ -1,4 +1,4 @@
-import imagej
+exit()
 ij = imagej.init()
 print(ij.getVersion())
 

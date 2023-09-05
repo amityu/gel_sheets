@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python App</title>
+</head>
+<body>
+
+
+<h1>Segementation</h1>
+<button onclick="Seg()">Segmentation</button>
+<script>
+        function Seg() {
+            fetch('/seg_p')
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            });
+        }
+    </script>
+</body>
+</html>

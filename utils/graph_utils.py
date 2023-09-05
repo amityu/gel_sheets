@@ -14,3 +14,11 @@ def add_time_to_df(df, gel_data):
 
     df = pd.merge(df, new_df, on='time',how="inner").drop(columns=['time'])
     return df
+
+def image_to_int8(image):
+    image = image.astype(np.float32)
+    image = image - image.min()
+    image = image / image.max()
+    image = image * 255
+    image = image.astype(np.uint8)
+    return image
