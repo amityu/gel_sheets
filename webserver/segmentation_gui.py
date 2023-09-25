@@ -39,8 +39,9 @@ plot_sigma = 0
 # Initialize t, y coordinates
 global y,t
 t = 0
-y = 0
-
+y = gel_corrected.shape[2]//2
+vmin = np.nanmin(surface)
+vmax = np.nanmax(surface)
 # Function to update the plot
 def update_plot():
     global y,t
@@ -56,7 +57,7 @@ def update_plot():
     ax1.set_title('Gel Corrected by illumination filter \n y=%d'%y)
 
     ax1.plot(gaussian_filter(h[y,: ],sigma = plot_sigma ), 'y', linestyle='--')
-    im= ax2.imshow(h, origin='lower', cmap='coolwarm')
+    im= ax2.imshow(h, origin='lower', cmap='coolwarm', vmax = vmax, vmin = vmin)
     ax2.hlines(y=y, xmin=0, xmax=h.shape[0], color='b')
 
     ax2.set_xlabel('X (Pixels)')
@@ -97,7 +98,7 @@ ax1.set_ylabel('Z (Pixels)')
 ax1.set_title('Gel Corrected by illumination filter \n y=%d'%y)
 
 ax1.plot(gaussian_filter(h[y,: ],sigma = plot_sigma ), 'y', linestyle='--')
-im= ax2.imshow(h, origin='lower', cmap='coolwarm')
+im= ax2.imshow(h, origin='lower', cmap='coolwarm', vmax = vmax, vmin = vmin )
 ax2.hlines(y=y, xmin=0, xmax=h.shape[0], color='b')
 
 ax2.set_xlabel('X (Pixels)')

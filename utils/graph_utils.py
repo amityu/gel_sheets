@@ -22,3 +22,29 @@ def image_to_int8(image):
     image = image * 255
     image = image.astype(np.uint8)
     return image
+
+
+def values_3d(data, manifold):
+    '''
+
+    :param data: 4d array (such as gel or motors)
+    :param manifold: 3d array such as surface or membrane
+
+    :return:
+    '''
+    index_a = np.arange(data.shape[0])[:, np.newaxis, np.newaxis]
+    index_c = np.arange(data.shape[2])[:, np.newaxis]
+    index_d = np.arange(data.shape[3])
+
+    # Use advanced indexing to get the required values from `motors`
+
+    return data[index_a, manifold, index_c, index_d]
+
+def values_3d(data, manifold, lines_up = 0, lines_down =0):
+    index_a = np.arange(data.shape[0])[:, np.newaxis, np.newaxis]
+    index_c = np.arange(data.shape[2])[:, np.newaxis]
+    index_d = np.arange(data.shape[3])
+
+    # Use advanced indexing to get the required values from `motors`
+
+    return data[index_a, manifold-lines_down, index_c, index_d]
