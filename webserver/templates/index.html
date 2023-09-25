@@ -2,7 +2,11 @@
 
 <!DOCTYPE html>
 <html>
+
 <head>
+    <!
+    <meta http-equiv="refresh" content="1"> <!-- Refresh every 1 seconds -->
+    -->
     <title>Arrow Key Test</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript">
@@ -33,9 +37,25 @@
             });
         });
     </script>
+    <script>
+        function refreshImage() {
+          // Get the image element
+          var imgElement = document.getElementById('refreshImage');
+
+          // Get the current URL of the image
+          var url = imgElement.src;
+
+          // Add a timestamp as a query parameter to the URL to ensure the browser reloads the image
+          imgElement.src = url.split('?')[0] + '?time=' + new Date().getTime();
+        }
+
+        // Set an interval to refresh the image every 1000 milliseconds (1 second)
+        setInterval(refreshImage, 1000);
+    </script>
 </head>
 <body>
-<h1>Press an arrow key!</h1>
-<img id="image" src="" alt="Arrow image">
+<h1>Yuval's Segmentation viewing app. press arrow keys</h1>
+<img id="refreshImage" src="{{ url_for('static', filename='images/segimage.png') }}" alt="My Image">
+
 </body>
 </html>
