@@ -1,4 +1,6 @@
+import ants
 import numpy as np
+import tifffile
 from scipy.ndimage import label
 from skimage import morphology
 from skimage.filters import gaussian, sobel
@@ -112,6 +114,8 @@ def stabilize(gel, PROJECT_PATH, movie, mask_coordinates, moving_mask_coordinate
     :param moving_mask_cordinates: (z1,z2,y1,y2,x1,x2)
     :param time_range: np.nan if all time points are to be stabilized, this is default
     :return:
+    THis function save the trasformation in the PROJECT_PATH/add_data/movie/transform folder and warped images in tmp folder which needs to exist in the movie folder
+    The suggested working mannaer it to check the warped images during the process
     '''
     print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     if time_range is None:
@@ -132,4 +136,7 @@ def stabilize(gel, PROJECT_PATH, movie, mask_coordinates, moving_mask_coordinate
 
             result = ants.registration(fixed=fixed_image, moving = gel_ant, type_of_transform='Rigid', mask=mask, moving_mask = moving_mask)
             trans = ants.read_transform(result['fwdtransforms'][0])
-            ants.write_transform(trans, PROJECT_PATH + 'add_data/%s/transform/transform'%movie + str(t+1) + '.mat')
+            warped_image = ants.apply_transforms(gel_ant, transformlist=trans)
+            tifffile.save(PROJECT_PATH + movie + 'tmp/warped_image' + str(t+1) + '.tif', warped_image.numpy())
+                        ants.write_transform(trans, PROJECT_PATH + 'add_data/%s/transform/transform'%movie + str(t+1) + '.mat')
+    return 0
