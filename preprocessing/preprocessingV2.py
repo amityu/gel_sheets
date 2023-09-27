@@ -1,10 +1,11 @@
 import numpy as np
 from scipy.ndimage import label
 from skimage import morphology
+from skimage.filters import gaussian, sobel
 from skimage.morphology import ball
 
 
-def get_surface_and_membrane(gel, number_of_std = 3,movie_path,threshold = np.nan):
+def get_surface_and_membrane(gel, movie_path, number_of_std = 3,threshold = np.nan):
     '''
     monomer_rect.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
     :param gel: memory map gel, it will be copied and nans will be replaced with zeros 
@@ -69,6 +70,66 @@ def get_surface_and_membrane(gel, number_of_std = 3,movie_path,threshold = np.na
             #h = spline(y,x)
             surface[t] = h#gaussian(h, sigma=1)
             membrane[t] = m#gaussian(m, sigma=1)
-        np.save(movie_path + 'np/height%d_ball_radius%d.npy'%(step_number,selem_radius), surface)
-        np.save(movie_path + 'np/membrane%d_ball_radius%d.npy'%(step_number,selem_radius),membrane)
         return surface, membrane
+
+def spike(surface, sigma=2, sobel_threshold = 7.5):
+    '''
+
+    :param surface: 3d array of surface
+    :param sigma: Gaussian smoothing
+    :return: 3d array of surface with nans where there are spikes or holes, but if a height
+    of a point that was declared to be a hole increases, it will be replaced with the new height
+
+    '''
+
+    thresh1 = 1; thresh2 =1;
+    spike = np.zeros_like(surface)
+    smoothed_surface = surface.copy()
+    spike[0] = surface[0]
+    spike[1] = surface[1]
+
+    for t  in range(len(surface)):
+        smoothed_surface[t][np.isnan(surface[t])] = np.nanmean(smoothed_surface[t]) # replace nans with mean to enable gaussian smoothing
+        smoothed_surface[t] = gaussian(smoothed_surface[t].astype(float), sigma=sigma)
+    for t in range(2,len(surface)):
+        a = smoothed_surface[t].copy()
+        b = smoothed_surface[t-1].copy()
+        c = smoothed_surface[t-2].copy()
+        spike[t] = surface[t]
+        spike[t][np.bitwise_and((b-a)>thresh1, (c-a)>thresh2)] =np.nan
+        spike[t][np.bitwise_and((a-b)>thresh1, (a-c)>thresh2)] =smoothed_surface[t][np.bitwise_and((a-b)>thresh1, (a-c)>thresh2)]
+        spike[t][sobel(surface[t]) > sobel_threshold] = np.nan
+    return spike
+
+
+def stabilize(gel, PROJECT_PATH, movie, mask_coordinates, moving_mask_coordinates, time_range = None):
+    '''
+
+    :param gel: 4d array of gel
+    :param movie: movie name
+    :param PROJECT_PATH: path to the project
+    :param mask_cordinates: (z1,z2,y1,y2,x1,x2)
+    :param moving_mask_cordinates: (z1,z2,y1,y2,x1,x2)
+    :param time_range: np.nan if all time points are to be stabilized, this is default
+    :return:
+    '''
+    print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    if time_range is None:
+        time_range = range(gel.shape[3])
+    (z1,z2,y1,y2,x1,x2) = mask_coordinates
+    mask = np.zeros_like(gel[:,:,:,0])
+    mask[x1:x2,y1:y2,z1:z2] = 1
+    mask = ants.from_numpy(mask)
+    (z1,z2,y1,y2,x1,x2) = moving_mask_coordinates
+
+    moving_mask = np.zeros_like(gel[:,:,:,0])
+    moving_mask[x1:x2,y1:y2,z1:z2 ] = 1
+    moving_mask = ants.from_numpy(moving_mask)
+    fixed_image = ants.from_numpy(gel[:,:,:,0])
+    for t in trange(gel.shape[3]):
+        if t in time_range:
+            gel_ant = ants.from_numpy(gel[:,:,:,t])
+
+            result = ants.registration(fixed=fixed_image, moving = gel_ant, type_of_transform='Rigid', mask=mask, moving_mask = moving_mask)
+            trans = ants.read_transform(result['fwdtransforms'][0])
+            ants.write_transform(trans, PROJECT_PATH + 'add_data/%s/transform/transform'%movie + str(t+1) + '.mat')

@@ -25,7 +25,7 @@ plt.savefig(image_url)
 plt.close()
 
 gel = np.load(MOVIE_PATH + 'np/gel_norm.npy')
-surface = np.load(MOVIE_PATH + 'np/height.npy')
+surface = np.load(MOVIE_PATH + 'np/spike.npy')
 # Replace this with your actual "surface" array
 plot_sigma = 0
 # Initialize t, y coordinates
