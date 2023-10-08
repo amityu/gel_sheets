@@ -1,21 +1,13 @@
 import numpy as np
 from bokeh.io import push_notebook, show, output_notebook
 from bokeh.plotting import figure, curdoc
-from bokeh.models import LinearColorMapper, Slider
+from bokeh.models import LinearColorMapper, Slider, ColorBar
 from bokeh.layouts import column
 from bokeh.palettes import Viridis256
-from bokeh.transform import transform
 from bokeh.models.sources import ColumnDataSource
-from bokeh.application.handlers import FunctionHandler
-from bokeh.application import Application
 from skimage.filters import sobel_h, sobel_v
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 import os
-
-import matplotlib.animation as animation
-from tqdm.notebook import tqdm, trange
 
 from scipy.ndimage import binary_dilation
 #%% md
@@ -35,8 +27,8 @@ ADD_PATH = os.path.join(PROJECT_PATH, "add_data/", movie + "/")
 MOVIE_PATH = DATA_PATH +  movie + '/'
 GRAPH_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/'
 def modify_doc(doc):
+    global spike, curvature
     print(np.nanmin(curvature), np.nanmax(curvature))
-
     # Example 3D data
     data_3d = curvature  # Replace this with your 3D array
 
@@ -44,9 +36,13 @@ def modify_doc(doc):
     source = ColumnDataSource(data={'image': [data_3d[0,:, :]]})
 
     # Set up plot
-    p = figure(width=500, height=500, x_range=(0, 10), y_range=(0, 10), title="Animated 3D Array")
-    p.image(image='image', x=0, y=0, dw=10, dh=10, source=source, color_mapper=LinearColorMapper(palette=Viridis256))
+    p = figure(width=800, height=800, x_range=(0, 10), y_range=(0, 10), title="Curvature")
+    mapper = LinearColorMapper(palette="Viridis256", low=-1, high=3)
 
+    color_bar = ColorBar(color_mapper=mapper, location=(0,0))
+
+    p.image(image='image', x=0, y=0, dw=10, dh=10, source=source, color_mapper=LinearColorMapper(palette=Viridis256))
+    p.add_layout(color_bar, 'right')
     # Set up slider
     slider = Slider(start=0, end=data_3d.shape[0]-1, value=0, step=1, title="Index")
 
@@ -61,7 +57,7 @@ def modify_doc(doc):
 
     # Add to doc
 
-    curdoc().add_root(layout)
+    doc.add_root(layout)
 def gaussian_curvature(surface):
     nan_mask = np.isnan(surface)
     dilated_nan_mask = binary_dilation(nan_mask)
@@ -81,7 +77,7 @@ if __name__ == '__main__':
     from bokeh.server.server import Server
     from bokeh.application import Application
     from bokeh.application.handlers.function import FunctionHandler
-    spike = np.load(MOVIE_PATH + 'tmp/filtered_spike.npy', mmap_mode='r')
+    spike = np.load(MOVIE_PATH + 'tmp/filtered_spike.npy')
     curvature = np.zeros_like(spike)
     sigma = 5
     for t,img in enumerate(spike):
@@ -91,7 +87,6 @@ if __name__ == '__main__':
     print(np.nanmin(curvature), np.nanmax(curvature))
 
     apps = {'/': Application(FunctionHandler(modify_doc))}
-
-    server = Server(apps, port=5000)
+    server = Server(apps, port=5004)
     server.start()
     server.io_loop.start()
