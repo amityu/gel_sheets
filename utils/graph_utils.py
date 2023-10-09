@@ -32,19 +32,22 @@ def values_3d(data, manifold):
 
     :return:
     '''
+    print('hi')
+    index_a = np.arange(data.shape[0])[:, np.newaxis, np.newaxis]
+    index_c = np.arange(data.shape[2])[:, np.newaxis]
+    index_d = np.arange(data.shape[3])
+    mask = np.isnan(manifold)
+    manifold[mask] = 0
+    # Use advanced indexing to get the required values from `motors`
+    answer = data[index_a, manifold.astype(int), index_c, index_d]
+    answer[mask] = np.nan
+    return answer
+
+'''def values_3d(data, manifold, lines_up = 0, lines_down =0):
     index_a = np.arange(data.shape[0])[:, np.newaxis, np.newaxis]
     index_c = np.arange(data.shape[2])[:, np.newaxis]
     index_d = np.arange(data.shape[3])
 
     # Use advanced indexing to get the required values from `motors`
 
-    return data[index_a, manifold, index_c, index_d]
-
-def values_3d(data, manifold, lines_up = 0, lines_down =0):
-    index_a = np.arange(data.shape[0])[:, np.newaxis, np.newaxis]
-    index_c = np.arange(data.shape[2])[:, np.newaxis]
-    index_d = np.arange(data.shape[3])
-
-    # Use advanced indexing to get the required values from `motors`
-
-    return data[index_a, manifold-lines_down, index_c, index_d]
+    return data[index_a, manifold-lines_down, index_c, index_d]'''
