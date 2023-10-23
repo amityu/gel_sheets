@@ -1,19 +1,19 @@
-import numpy as np
-from bokeh.io import push_notebook, show, output_notebook
 from bokeh.plotting import figure, row
-from bokeh.models import LinearColorMapper, Slider, ColorBar, HoverTool, Label, LogColorMapper
-from bokeh.layouts import column
-from bokeh.palettes import Viridis256, all_palettes, linear_palette
-from bokeh.models.sources import ColumnDataSource
-from skimage.filters import sobel_h, sobel_v
-import numpy as np
 import os
 
+import numpy as np
+from bokeh.layouts import column
+from bokeh.models import LinearColorMapper, Slider, ColorBar, HoverTool, Label
+from bokeh.models.sources import ColumnDataSource
+from bokeh.palettes import Viridis256
+from bokeh.plotting import figure, row
 from scipy.ndimage import binary_dilation
+from skimage.filters import sobel_h, sobel_v
+
 #%% md
 
 PROJECT_PATH = 'C:/Users/amityu/DataspellProjects/gel_sheets/'
-DATA_PATH = 'D:/Data/'
+DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie = 'Control'
 #movie = '130721'
 #movie ='140721'
@@ -125,6 +125,7 @@ if __name__ == '__main__':
     from bokeh.server.server import Server
     from bokeh.application import Application
     from bokeh.application.handlers.function import FunctionHandler
+    from tornado.ioloop import IOLoop
     spike = np.load(MOVIE_PATH + 'tmp/filtered_spike.npy')
     curvature = np.zeros_like(spike)
     sigma = 5
@@ -141,7 +142,11 @@ if __name__ == '__main__':
     </script>
     """
 
-    apps = {'/': Application(FunctionHandler(modify_doc))}
-    server = Server(apps, port=5005)
+    apps = {'/myapp': Application(FunctionHandler(modify_doc))}
+    server = Server(apps,  io_loop=IOLoop.current(), port=5000, address='132.72.216.33', allow_websocket_origin=["*"])
+    print(server.address + ':' + str(server.port))
+#   server = Server(apps, port=5000)
     server.start()
+    server.io_loop.add_callback(server.show, "/myapp")
+
     server.io_loop.start()
