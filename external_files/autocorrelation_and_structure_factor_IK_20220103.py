@@ -113,7 +113,7 @@ Helper functions
 '''
 
 
-def myxcorr(a,b,axes=[0,1] ,mode = "full",unbiased = True):
+def myxcorr(a,b,axes=[0,1] ,mode = "full",unbiased = False):
     # correlate does the complex conjugation of b and the zero padding for 
     # "full". This function only removes bias due to partial array overlap
     
