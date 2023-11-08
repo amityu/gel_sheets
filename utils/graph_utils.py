@@ -51,3 +51,39 @@ def values_3d(data, manifold):
     # Use advanced indexing to get the required values from `motors`
 
     return data[index_a, manifold-lines_down, index_c, index_d]'''
+
+
+def xy_matrix_to_r(A, x0, y0):
+
+    '''
+
+    :param A: a 2d matrix
+    :param x0: center of the matrix
+    :param y0: center of the matrix
+    :return: 1d array of the average value of each radius from the center
+    '''
+    x = np.arange(A.shape[1])
+    y = np.arange(A.shape[0])
+    xx, yy = np.meshgrid(x, y)
+    r_matrix = np.sqrt((xx-x0) ** 2 + (yy-y0) ** 2).astype(int)
+    r_line= np.zeros(int(np.nanmax(r_matrix)))
+    for r in range(int(np.nanmax(r_matrix))):
+        r_line[r] = np.nanmean(A[r_matrix == r])
+    return r_line
+
+
+def yuval_ticks(x_lag, gap=50):
+    '''
+
+    :param x_lag: 1d array arange(-M//2,M//2)
+    :param gap: the gap inbetween ticks
+    :return: the ticks and the labels
+    '''
+    # Calculate the nearest multiple of 50 to the minimum value of x_lag that is not less than the minimum
+    start_label = (np.min(x_lag) // gap) * gap if np.min(x_lag) % gap == 0 else (np.min(x_lag) // gap + 1) * gap
+
+    # Calculate the nearest multiple of 50 to the maximum value of x_lag that is not more than the maximum
+    end_label = (np.max(x_lag) // gap) * gap if np.max(x_lag) % gap == 0 else (np.max(x_lag) // gap) * gap
+
+
+    return  np.arange( len(x_lag)/2%gap, len(x_lag), gap),np.arange(start_label, end_label + 1, gap)
