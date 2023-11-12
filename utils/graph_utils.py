@@ -32,7 +32,6 @@ def values_3d(data, manifold):
 
     :return:
     '''
-    print('hi')
     index_a = np.arange(data.shape[0])[:, np.newaxis, np.newaxis]
     index_c = np.arange(data.shape[2])[:, np.newaxis]
     index_d = np.arange(data.shape[3])
@@ -85,5 +84,4 @@ def yuval_ticks(x_lag, gap=50):
     # Calculate the nearest multiple of 50 to the maximum value of x_lag that is not more than the maximum
     end_label = (np.max(x_lag) // gap) * gap if np.max(x_lag) % gap == 0 else (np.max(x_lag) // gap) * gap
 
-
-    return  np.arange( len(x_lag)/2%gap, len(x_lag), gap),np.arange(start_label, end_label + 1, gap)
+    return np.arange( len(x_lag)/2%gap, len(x_lag), gap).astype(int), np.arange(start_label, end_label + 1, gap)
