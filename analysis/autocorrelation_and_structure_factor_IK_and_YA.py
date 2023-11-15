@@ -40,8 +40,8 @@ def spatial_autocorr(h,x,y):
     # define the flucutation of h from the mean
     Dh_ = h_ - np.mean(h_)
     #compute the autocorrelation
-    h_autocorr = myxcorr(Dh_,Dh_)
-    
+    #h_autocorr = myxcorr(Dh_,Dh_)
+    h_autocorr = myxcorr(h_, h_ )
     #define lag coordinate vectors for h_autocorr
     N,M = h_autocorr.shape
     xlag = np.arange(-M//2,M//2)*dx
@@ -97,7 +97,7 @@ def static_structure_factor_radial(SSF,kx,ky):
     kR, F = cart2pol(KX,KY)
     # Radii at which to evaluate the radial SSF
     N,M = SSF.shape
-    kr = dk*np.arange(np.min([N//2,M//2]))# / np.min([N,M])
+    kr = dk*np.arange(np.min([N//2,M//2])) / np.min([N,M])
     # Initialize array for storing the radial SSF
     SSF_radial = np.zeros(kr.shape)
     # Compute the azimuthal average for each radius r
