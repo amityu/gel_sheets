@@ -1,6 +1,5 @@
-import numpy as np
 import pandas as pd
-
+#
 
 def add_time_to_df(df, gel_data):
     real_df = pd.read_excel(gel_data['data_path'] + 'add_data/%s_data.xlsx'%gel_data['name'])
@@ -86,3 +85,91 @@ def yuval_ticks(x_lag, gap=50):
     end_label = (np.max(x_lag) // gap) * gap if np.max(x_lag) % gap == 0 else (np.max(x_lag) // gap) * gap
     #label_gap = gap * len(x_lag) / (end_label - start_label)
     return np.arange( len(x_lag)/2%gap, len(x_lag), gap).astype(int), np.arange(start_label, end_label +1 , gap)
+
+
+from scipy.interpolate import griddata
+
+def interpolate_smooth_restore_2d(data, sigma=1.0):
+    """
+    Interpolate missing values, apply Gaussian smoothing, and restore NaN values in a 2D array.
+
+    Parameters:
+        data (numpy.ndarray): Input 2D array with NaN values.
+        sigma (float): Standard deviation for the Gaussian filter (controls smoothing).
+
+    Returns:
+        numpy.ndarray: Processed 2D array with interpolated and smoothed values, and NaN values restored.
+    """
+    # Find indices of NaN values
+    nan_indices = np.isnan(data)
+
+    # Create coordinates of non-NaN values
+    x, y = np.meshgrid(np.arange(data.shape[1]), np.arange(data.shape[0]))
+    x_nan, y_nan = x[nan_indices], y[nan_indices]
+
+    # Flatten the data and corresponding coordinates
+    data_flat = data[~nan_indices].flatten()
+    coordinates = np.column_stack((x[~nan_indices], y[~nan_indices]))
+
+    # Interpolate using griddata
+    interpolated_data = griddata(coordinates, data_flat, (x, y), method='linear')
+
+    # Apply the Gaussian filter
+    smoothed_data = gaussian_filter(interpolated_data, sigma=sigma)
+
+    # Replace NaN values in the smoothed data with NaN values from the original data
+    smoothed_data[nan_indices] = np.nan
+
+    return smoothed_data
+
+import numpy as np
+from scipy.ndimage import gaussian_filter
+
+def interpolate_smooth_restore_1d(data, sigma=1.0):
+    """
+    Interpolate missing values, apply Gaussian smoothing, and restore NaN values in a 1D array.
+
+    Parameters:
+        data (numpy.ndarray): Input 1D array with NaN values.
+        sigma (float): Standard deviation for the Gaussian filter (controls smoothing).
+
+    Returns:
+        numpy.ndarray: Processed 1D array with interpolated and smoothed values, and NaN values restored.
+    """
+    # Find indices of NaN values
+    nan_indices = np.isnan(data)
+
+    # Create indices of non-NaN values
+    x = np.arange(len(data))
+
+    # Interpolate using linear interpolation
+    data_interpolated = data.copy()
+    data_interpolated[nan_indices] = np.interp(x[nan_indices], x[~nan_indices], data[~nan_indices])
+
+    # Apply the Gaussian filter
+    smoothed_data = gaussian_filter(data_interpolated, sigma=sigma)
+    smoothed_data[nan_indices] = np.nan
+
+    return smoothed_data
+
+def time_string(t):
+    minutes = t // 60
+    seconds = t % 60
+
+    # Create a formatted string
+    return  f"{minutes} min {seconds:02d} sec"
+
+def interp_1d(arr):
+    '''
+    fill nans of a 1d array with linear interpolation'''
+
+    # Find indices of NaN values
+    nan_indices = np.isnan(arr)
+
+    # Create an array of non-NaN indices
+    non_nan_indices = np.arange(len(arr))[~nan_indices]
+
+    # Interpolate NaN values using linear interpolation
+    arr[nan_indices] = np.interp(np.arange(len(arr))[nan_indices], non_nan_indices, arr[~nan_indices])
+    return arr
+
