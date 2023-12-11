@@ -101,6 +101,8 @@ def interpolate_smooth_restore_2d(data, sigma=1.0):
         numpy.ndarray: Processed 2D array with interpolated and smoothed values, and NaN values restored.
     """
     # Find indices of NaN values
+    data = data.copy()
+
     nan_indices = np.isnan(data)
 
     # Create coordinates of non-NaN values
@@ -136,6 +138,7 @@ def interpolate_smooth_restore_1d(data, sigma=1.0):
     Returns:
         numpy.ndarray: Processed 1D array with interpolated and smoothed values, and NaN values restored.
     """
+    data = data.copy()
     # Find indices of NaN values
     nan_indices = np.isnan(data)
 
@@ -143,7 +146,7 @@ def interpolate_smooth_restore_1d(data, sigma=1.0):
     x = np.arange(len(data))
 
     # Interpolate using linear interpolation
-    data_interpolated = data.copy()
+    data_interpolated = data
     data_interpolated[nan_indices] = np.interp(x[nan_indices], x[~nan_indices], data[~nan_indices])
 
     # Apply the Gaussian filter
@@ -164,6 +167,7 @@ def interp_1d(arr):
     fill nans of a 1d array with linear interpolation'''
 
     # Find indices of NaN values
+    arr = arr.copy()
     nan_indices = np.isnan(arr)
 
     # Create an array of non-NaN indices
