@@ -1,13 +1,9 @@
-import time
-
-import ants
 import numpy as np
-import tifffile
 from scipy.ndimage import label
 from skimage import morphology
 from skimage.filters import gaussian, sobel
 from skimage.morphology import ball
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 
 def get_surface_and_membrane(gel, movie_path, number_of_std = 3,threshold = np.nan):
@@ -107,7 +103,8 @@ def spike(surface, sigma=2, sobel_threshold = 7.5):
     return spike
 
 
-def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df = None, time_range = None):
+def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df = None,
+              time_range = None, transformation_type = 'Rigid'):
     '''
 
     :param gel: 4d array of gel memory map
@@ -178,12 +175,13 @@ def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coo
             plt.title('fixed mask')
             plt.show()'''
 
-            result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform='Rigid', mask=mask,
+            result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform= transformation_type, mask=mask,
                                        moving_mask=moving_mask, mask_all_stages=True)
             trans = ants.read_transform(result['fwdtransforms'][0])
             path = transform_path + 'transform' + str(t+1) + '.mat'
             ants.write_transform(trans, path)
-            warped_image = ants.apply_transforms(gel_ant, gel_ant, transformlist=path)
+            #warped_image = ants.apply_transforms(gel_ant, gel_ant, transformlist=path)
+            warped_image = result['warpedmovout']
             # save warped image
             warped_image_numpy = warped_image.numpy()
             warped_image_numpy = np.transpose(warped_image_numpy, (2,1,0))
@@ -276,8 +274,8 @@ def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mas
             plt.title('fixed mask')
             plt.show()'''
 
-            result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform='Rigid', mask=mask,
-                                       moving_mask=moving_mask, mask_all_stages=True)
+            result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform='Translation', mask=mask,
+                                       moving_mask=moving_mask, mask_all_stages=True, restrict_transformation=(0, 0, 1))
             trans = ants.read_transform(result['fwdtransforms'][0])
             path = transform_path + 'transform' + str(t+1) + '.mat'
             ants.write_transform(trans, path)
@@ -289,3 +287,80 @@ def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mas
             tifffile.imwrite(movie_path + '/tmp/warped_image' + str(t+1) + '.tif', warped_image_numpy.astype('float32'))
 
     return warped_image_numpy
+
+import numpy as np
+import ants
+import tifffile
+import time
+import multiprocessing
+from functools import partial
+from tqdm import trange
+
+def process_time_point(t, gel, fixed_image, mask, movie_path, transform_path, z_df, moving_mask_coordinates):
+    print('in process time point %d'%t)
+    if z_df is None:
+        (z1, z2, y1, y2, x1, x2) = moving_mask_coordinates
+    else:
+        z1 = int(z_df.iloc[t]['Z'])
+        z2 = z1 + int(z_df.iloc[t]['r_size'])
+        (y1, y2, x1, x2) = (0, gel.shape[2], 0, gel.shape[3])
+
+    moving_mask = np.zeros_like(gel[0, :, :, :])
+    moving_mask = np.transpose(moving_mask, (2, 1, 0))
+    moving_mask[x1:x2, y1:y2, z1:z2] = 1
+    moving_mask = ants.from_numpy(moving_mask)
+
+    image_t = np.array(np.transpose(gel[t, :, :, :], (2, 1, 0)))
+    image_t[np.isnan(image_t)] = 0
+    gel_ant = ants.from_numpy(image_t)
+
+    result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform='SyN', mask=mask,
+                               moving_mask=moving_mask, mask_all_stages=True)
+    trans = ants.read_transform(result['fwdtransforms'][0])
+    path = transform_path + 'transform' + str(t + 1) + '.mat'
+    ants.write_transform(trans, path)
+    warped_image = ants.apply_transforms(gel_ant, gel_ant, transformlist=path)
+
+    warped_image_numpy = warped_image.numpy()
+    warped_image_numpy = np.transpose(warped_image_numpy, (2, 1, 0))
+    warped_image_numpy[warped_image_numpy == 0] = np.nan
+    tifffile.imwrite(movie_path + '/tmp/warped_image' + str(t + 1) + '.tif', warped_image_numpy.astype('float32'))
+    print('finished time point %d'%t)
+    return warped_image_numpy
+
+def mp_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df=None, time_range=None):
+    print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    if time_range is None:
+        time_range = range(gel.shape[0])
+    if z_df is None:
+        (z1, z2, y1, y2, x1, x2) = mask_coordinates
+    else:
+        z1 = int(z_df.iloc[0]['Z'])
+        z2 = int(z1 + z_df.iloc[0]['r_size'])
+        (y1, y2, x1, x2) = (0, gel.shape[2], 0, gel.shape[3])
+
+    mask = np.zeros_like(gel[0, :, :, :])
+    mask = np.transpose(mask, (2, 1, 0))
+    mask[x1:x2, y1:y2, z1:z2] = 1
+    mask = ants.from_numpy(mask)
+
+    numpy_image = np.array(np.transpose(gel[0], (2, 1, 0)))
+    numpy_image[np.isnan(numpy_image)] = 0
+    fixed_image = ants.from_numpy(numpy_image)
+
+    # Prepare arguments for multiprocessing
+    process_func = partial(process_time_point, gel=gel, fixed_image=fixed_image, mask=mask,
+                           movie_path=movie_path, transform_path=transform_path, z_df=z_df,
+                           moving_mask_coordinates=moving_mask_coordinates)
+
+    # Multiprocessing
+    pool = multiprocessing.Pool(processes=6)
+    results = pool.map(process_func, time_range)
+    pool.close()
+    pool.join()
+
+    return results
+
+# Call your function with the appropriate arguments
+# result = stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df, time_range)
