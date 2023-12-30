@@ -1,4 +1,7 @@
+import itertools
+
 import numpy as np
+import pandas as pd
 from scipy.ndimage import label
 from skimage import morphology
 from skimage.filters import gaussian, sobel
@@ -6,7 +9,7 @@ from skimage.morphology import ball
 from tqdm import tqdm
 
 
-def get_surface_and_membrane(gel, movie_path, number_of_std = 3,threshold = np.nan):
+def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold = np.nan, time_range = None):
     '''
     monomer_rect.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
     :param gel: memory map gel, it will be copied and nans will be replaced with zeros 
@@ -18,15 +21,16 @@ def get_surface_and_membrane(gel, movie_path, number_of_std = 3,threshold = np.n
     
     
     zeros_gel =gel.copy()
-    zeros_gel[np.isnan(zero_gel)] = 0
+    zeros_gel[np.isnan(zeros_gel)] = 0
     
     
-    monomer_data_df = pd.read_csv(movie_path + 'np/monomer_rect.csv')
+    monomer_data_df = pd.read_csv(add_path + 'monomer_rect.csv')
     step_number_list = [512]# for binning
     selem_radius_list = [2]# for closing
     surface = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     membrane = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
-    time_range = range(len(surface))
+    if time_range is None:
+        time_range = range(len(surface))
     # get the Cartesian product
     cartesian_product = itertools.product(step_number_list, selem_radius_list)
     
@@ -56,7 +60,7 @@ def get_surface_and_membrane(gel, movie_path, number_of_std = 3,threshold = np.n
                         h[i,j] = np.where(cleaned_mask[:,i,j])[0][-1]
                         m[i,j] = np.where(cleaned_mask[:,i,j])[0][0]
                     except:
-                        print ('error')
+                        #print ('error')
                         h[i,j] = np.nan
                         m[i,j] = np.nan
     
@@ -104,7 +108,7 @@ def spike(surface, sigma=2, sobel_threshold = 7.5):
 
 
 def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df = None,
-              time_range = None, transformation_type = 'Rigid'):
+              time_range = None, transformation_type = 'Rigid', fixed_image_index = 0):
     '''
 
     :param gel: 4d array of gel memory map
@@ -135,7 +139,7 @@ def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coo
     mask[x1:x2,y1:y2,z1:z2] = 1
     mask = ants.from_numpy(mask)
 
-    numpy_image = np.array(np.transpose(gel[0], (2,1,0)))
+    numpy_image = np.array(np.transpose(gel[fixed_image_index], (2,1,0)))
     #replace nan with zeros
     numpy_image[np.isnan(numpy_image)] = 0
 

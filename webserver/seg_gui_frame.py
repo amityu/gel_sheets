@@ -12,10 +12,12 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie ='140721'
 #movie ='150721'
 #movie ='100621'
-movie = '130721_CCA60_RAW'
-#movie ='280523 AM100 568'
+#movie = '130721_CCA60_RAW'
+movie ='280523 AM100 568'
 #movie = 'control_1_050721'
 #movie = 'cca120'
+#movie = 'cca120_am200'
+
 MOVIE_PATH = DATA_PATH +  movie + '/'
 TMP_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/tmp/'
 global y,t, image_url
@@ -25,10 +27,17 @@ plt.plot([1,2,3,4])
 plt.savefig(image_url)
 plt.close()
 
-gel = np.load(MOVIE_PATH + 'np/gel_norm.npy', mmap_mode='r')
-surface = np.load(MOVIE_PATH + 'np/spike.npy', mmap_mode='r') + 6
+gel = np.load(MOVIE_PATH + 'np/gel_norm.npy')#, mmap_mode='r')#[:, 20:,80:]
+surface = np.load(MOVIE_PATH + 'np/height.npy')#, mmap_mode='r')#[:, 20:,80:]
 # Replace this with your actual "surface" array
 plot_sigma = 0
+'''
+cca120_am200
+gel[:, :, 0:80, :] =np.nan
+surface[:, 0:80, :] = np.nan
+gel[:, :, :, 0:50] = np.nan
+surface[:, :, 0:50] = np.nan'''
+
 # Initialize t, y coordinates
 t = 0
 y = gel.shape[2]//2
