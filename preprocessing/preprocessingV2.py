@@ -26,7 +26,7 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold = np.nan
     
     monomer_data_df = pd.read_csv(add_path + 'monomer_rect.csv')
     step_number_list = [512]# for binning
-    selem_radius_list = [2]# for closing
+    selem_radius_list = [1]# for closing
     surface = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     membrane = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     if time_range is None:
@@ -41,7 +41,10 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold = np.nan
             m = np.zeros(gel.shape[2:])
             '''mask = apply_hysteresis_threshold(zeros_gel[t,:,:,:], monomer_data_df.iloc[t]['gaussian_std']*3.5+ monomer_data_df.iloc[t]['gaussian_mean'], monomer_data_df
             .iloc[t]['gaussian_std']*3.5 + monomer_data_df.iloc[t]['gaussian_mean'])'''  # hysteriss thresholding was tried but it was not neccessary
-            mask = zeros_gel[t,:,:,:] > monomer_data_df.iloc[t]['gaussian_std']*number_of_std + monomer_data_df.iloc[t]['gaussian_mean']
+            if np.isnan(threshold):
+                mask = zeros_gel[t,:,:,:] > monomer_data_df.iloc[t]['gaussian_std']*number_of_std + monomer_data_df.iloc[t]['gaussian_mean']
+            else:
+                mask = zeros_gel[t,:,:,:] > threshold
             selem =ball(selem_radius)
             selem[2:] = 0
 
