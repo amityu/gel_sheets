@@ -499,7 +499,7 @@ def surface_stat_save(movie, save_plot = False):
             mean_list.append(np.nanmean(surface[t]))
             std_list.append(np.nanstd(surface[t]))
             fluctations_list.append(np.nanmean((surface[t] - np.nanmean(surface[t]))**2))
-        pd.DataFrame({'mean':mean_list, 'std':std_list, 'fluctations':fluctations_list}).to_csv(DATA_PATH +  movie + '/' +'np/' + movie+ 'surface_stats.csv')
+        df = pd.DataFrame({'mean':mean_list, 'std':std_list, 'fluctations':fluctations_list})
         if save_plot:
             plt.plot(mean_list, label = 'mean')
             plt.plot(std_list, label = 'std')
@@ -508,7 +508,7 @@ def surface_stat_save(movie, save_plot = False):
             plt.title('Surface stats ' + movie)
             plt.savefig(DATA_PATH +  movie + '/' +'np/' + movie+ 'surface_stats.png')
             plt.show()
-
+        return df
 
     # In[4]:
 def plot_segmentation(movie, x=256):

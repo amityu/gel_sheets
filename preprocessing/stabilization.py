@@ -17,7 +17,7 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie ='140721'
 #movie ='150721'
 #movie ='100621'
-movie ='280523 AM100 568'
+movie ='280523 AM100 568_1'
 ADD_PATH = os.path.join(PROJECT_PATH, "add_data/")
 
 
