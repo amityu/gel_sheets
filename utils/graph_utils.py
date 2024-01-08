@@ -26,7 +26,7 @@ def image_to_int8(image):
 def values_3d(data, manifold):
     '''
 
-    :param data: 4d array (such as gel or motors)
+    :param data: 4d array (such as gel or channel2)
     :param manifold: 3d array such as surface or membrane
 
     :return:
@@ -37,7 +37,7 @@ def values_3d(data, manifold):
     index_d = np.arange(data.shape[3])
     mask = np.isnan(manifold)
     my_manifold[mask] = 0
-    # Use advanced indexing to get the required values from `motors`
+    # Use advanced indexing to get the required values from `channel2`
     answer = data[index_a, my_manifold.astype(int), index_c, index_d]
     answer[mask] = np.nan
     return answer
@@ -47,7 +47,7 @@ def values_3d(data, manifold):
     index_c = np.arange(data.shape[2])[:, np.newaxis]
     index_d = np.arange(data.shape[3])
 
-    # Use advanced indexing to get the required values from `motors`
+    # Use advanced indexing to get the required values from `channel2`
 
     return data[index_a, manifold-lines_down, index_c, index_d]'''
 
@@ -177,3 +177,6 @@ def interp_1d(arr):
     arr[nan_indices] = np.interp(np.arange(len(arr))[nan_indices], non_nan_indices, arr[~nan_indices])
     return arr
 
+
+def my_normalize(x):
+    return (x - np.nanmin(  x))/(np.nanmax(x) - np.nanmin(x))
