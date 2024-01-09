@@ -10,6 +10,9 @@ movie = movie_list[0]
 
 MOVIE_PATH = DATA_PATH +  movie + '/'
 GRAPH_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/'
+import importlib
+import warnings
+
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,8 +24,9 @@ from tqdm.notebook import trange, tqdm
 
 from objects import movie_structure
 from objects.movie_structure import gaussian_curvature, mean_curvature
+from utils import graph_utils as gu
 
-
+importlib.reload(gu)
 def mypad(img, n):
     img[0:n,:] = np.nan
     img[-n:,:] = np.nan
@@ -510,6 +514,38 @@ def surface_stat_save(movie, save_plot = False):
             plt.show()
         return df
 
+
+def surface_distribution_save(movie, channel='gel_norm', save_plot = False):
+    warnings.filterwarnings(action='ignore', category=RuntimeWarning)
+    gel = np.load(DATA_PATH +  movie + '/' + 'np/%s.npy'%channel, mmap_mode='r')
+    surface = np.load(DATA_PATH +  movie + '/' + 'np/height.npy', mmap_mode='r')
+    gel = gu.place_nan_above_surface(gel, surface)
+    mean_list = []
+    std_list = []
+    fluctations_list = []
+    count_list = []
+    t_list = []
+    z_list = []
+    for t in range(len(gel)):
+
+            mean_list+= list(np.nanmean(gel[t,:,:,:], axis=(1,2)))
+            std_list+= list(np.nanstd(gel[t,:,:,:], axis=(1,2)))
+            z_mean = np.nanmean(gel[t,:,:,:], axis= (1,2))
+            fluctations_list += list(np.nanmean((gel[t, :, :,:] - z_mean[:, np.newaxis, np.newaxis])**2, axis=(1, 2)))
+            count_list += list(np.sum(~np.isnan(gel[t,:,:,:]), axis=(1,2)))
+            t_list += [t]*gel.shape[1]
+            z_list += list(range(gel.shape[1]))
+        #fluctations_list.append(np.nanmean((surface[t] - np.nanmean(surface[t]))**2))
+    df = pd.DataFrame({'time': t_list, 'z': z_list, 'intensity z mean': mean_list, 'intensity z std': std_list, 'intensity z fluctations': fluctations_list, 'count z ':count_list})
+    if save_plot:
+        plt.plot(mean_list, label = 'mean')
+        plt.plot(std_list, label = 'std')
+        plt.plot(fluctations_list, label = 'fluctations')
+        plt.legend()
+        plt.title('Surface stats ' + movie)
+        plt.savefig(DATA_PATH +  movie + '/' +'np/' + movie+ 'surface_stats.png')
+        plt.show()
+    return df
     # In[4]:
 def plot_segmentation(movie, x=256):
     gel = np.load(DATA_PATH +  movie + '/' + 'np/gel_norm.npy')

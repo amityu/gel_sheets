@@ -180,3 +180,17 @@ def interp_1d(arr):
 
 def my_normalize(x):
     return (x - np.nanmin(  x))/(np.nanmax(x) - np.nanmin(x))
+
+
+def place_nan_above_surface(gel, surface):
+    new_gel = np.copy(gel)
+    for t in range(gel.shape[0]):
+        for i in range(gel.shape[2]):
+            for j in range(gel.shape[3]):
+                try:
+                    new_gel[t, int(surface[t,i,j]):, i, j] = np.nan
+                except:
+                    new_gel[t, :, i, j] = np.nan
+    return new_gel
+
+
