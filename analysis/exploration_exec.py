@@ -517,7 +517,10 @@ def surface_stat_save(movie, save_plot = False):
 
 def surface_distribution_save(movie, channel='gel_norm', save_plot = False):
     warnings.filterwarnings(action='ignore', category=RuntimeWarning)
-    gel = np.load(DATA_PATH +  movie + '/' + 'np/%s.npy'%channel, mmap_mode='r')
+    gel = np.load(DATA_PATH +  movie + '/' + 'np/%s.npy'%channel)
+    # Assuming gel is your numpy array
+    threshold = np.percentile(gel[~np.isnan(gel)], 99.8)  # Find the 99.8 percentile of all values in gel
+    gel = np.where(gel > threshold, np.nan, gel)  # Replace all values above the threshold with NaN
     surface = np.load(DATA_PATH +  movie + '/' + 'np/height.npy', mmap_mode='r')
     gel = gu.place_nan_above_surface(gel, surface)
     mean_list = []
@@ -526,17 +529,28 @@ def surface_distribution_save(movie, channel='gel_norm', save_plot = False):
     count_list = []
     t_list = []
     z_list = []
+    minimum_intensity = np.nanmin(gel)
+    maximum_intensity = np.nanmax(gel) - minimum_intensity
+    normalized_gel = (gel - minimum_intensity)/maximum_intensity
+    mean_normalized_list = []
+    std_normalized_list = []
+    fluctations_normalized_list = []
+
     for t in range(len(gel)):
 
             mean_list+= list(np.nanmean(gel[t,:,:,:], axis=(1,2)))
             std_list+= list(np.nanstd(gel[t,:,:,:], axis=(1,2)))
             z_mean = np.nanmean(gel[t,:,:,:], axis= (1,2))
             fluctations_list += list(np.nanmean((gel[t, :, :,:] - z_mean[:, np.newaxis, np.newaxis])**2, axis=(1, 2)))
+            mean_normalized_list += list(np.nanmean(normalized_gel[t,:,:,:], axis=(1,2)))
+            std_normalized_list += list(np.nanstd(normalized_gel[t,:,:,:], axis=(1,2)))
+            z_mean_normalized = np.nanmean(normalized_gel[t,:,:,:], axis= (1,2))
+            fluctations_normalized_list += list(np.nanmean((normalized_gel[t, :, :,:] - z_mean_normalized[:, np.newaxis, np.newaxis])**2, axis=(1, 2)))
             count_list += list(np.sum(~np.isnan(gel[t,:,:,:]), axis=(1,2)))
             t_list += [t]*gel.shape[1]
             z_list += list(range(gel.shape[1]))
         #fluctations_list.append(np.nanmean((surface[t] - np.nanmean(surface[t]))**2))
-    df = pd.DataFrame({'time': t_list, 'z': z_list, 'intensity z mean': mean_list, 'intensity z std': std_list, 'intensity z fluctations': fluctations_list, 'count z ':count_list})
+    df = pd.DataFrame({'time': t_list, 'z': z_list, 'intensity z mean': mean_list, 'intensity z std': std_list, 'intensity z fluctations': fluctations_list, 'count z ':count_list, 'normalized intensity z mean': mean_normalized_list, 'normalized intensity z std': std_normalized_list, 'normalized intensity z fluctations': fluctations_normalized_list})
     if save_plot:
         plt.plot(mean_list, label = 'mean')
         plt.plot(std_list, label = 'std')
