@@ -529,9 +529,9 @@ def surface_distribution_save(movie, channel='gel_norm', save_plot = False):
     count_list = []
     t_list = []
     z_list = []
-    minimum_intensity = np.nanmin(gel)
-    maximum_intensity = np.nanmax(gel) - minimum_intensity
-    normalized_gel = (gel - minimum_intensity)/maximum_intensity
+    minimum_intensity = np.percentile(gel[~np.isnan(gel)], 0.2)
+    maximum_intensity = np.percentile(gel[~np.isnan(gel)], 99.8)
+    normalized_gel = (gel - minimum_intensity)/(maximum_intensity - minimum_intensity)
     mean_normalized_list = []
     std_normalized_list = []
     fluctations_normalized_list = []
