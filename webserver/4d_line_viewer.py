@@ -10,6 +10,9 @@ from bokeh.layouts import column, row
 from bokeh.models import Slider, ColumnDataSource
 import numpy as np
 from bokeh.server.server import Server
+from bokeh.models import Select
+from scipy.ndimage import gaussian_filter1d
+
 #%%
 PROJECT_PATH = 'C:/Users/amityu/DataspellProjects/gel_sheets/'
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
@@ -47,12 +50,15 @@ def modify_doc(doc):
             self.source = ColumnDataSource(data={'z': np.arange(self.z-2), 'value': data[0, 2:, self.y//2, self.x//2]})
 
             # Create line plot
-            self.p = figure(title="Line Plot Along R Axis", width=600, height=300)
+            self.p = figure(title="Line Plot Along Z Axis", width=600, height=300, y_range=(0.6, 1.5))
             self.p.line('z', 'value', source=self.source)
             self.p.xaxis.axis_label = "Z axis"
             self.p.yaxis.axis_label = "(Intensity) Value"
+            # Create a dropdown menu for sigma
+            self.sigma_select = Select(title="Sigma:", value="0", options=[str(i/2) for i in range(20)])
+            self.sigma_select.on_change('value', self.update_sigma)
 
-            # Set up callbacks
+        # Set up callbacks
             self.t_slider.on_change('value', self.update_data)
             self.y_slider.on_change('value', self.update_data)
             self.x_slider.on_change('value', self.update_data)
@@ -61,13 +67,35 @@ def modify_doc(doc):
             t = int(self.t_slider.value)
             y = int(self.y_slider.value)
             x = int(self.x_slider.value)
-            new_data = {'z': np.arange(self.z), 'value': self.data[t, :, y, x]}
+            new_data = {'z': np.arange(self.z), 'value': self.data[t, :, y, x].copy()}
+            self.source.data = new_data
+            self.update_sigma(None, None, None)
+        def update_sigma(self, attr, old, new):
+            # Retrieve the current data
+            t = int(self.t_slider.value)
+            y = int(self.y_slider.value)
+            x = int(self.x_slider.value)
+
+            # Apply the sigma
+            sigma = float(self.sigma_select.value)
+            line_values = self.data[t, :, y, x].copy()
+
+            if sigma > 0:
+                filtered_data = gaussian_filter1d(line_values, sigma=sigma)
+            else:
+                filtered_data = line_values
+            new_data = {'z': np.arange(self.z), 'value': filtered_data}
+
+
             self.source.data = new_data
 
+
+
         def create_layout(self):
-            sliders = column(self.t_slider, self.y_slider, self.x_slider)
+            sliders = column(self.t_slider, self.y_slider, self.x_slider, self.sigma_select)
             layout = row(sliders, self.p)
             return layout
+
 
 
     explorer = DataExplorer(data)
