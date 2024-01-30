@@ -105,7 +105,9 @@ def bokeh_app(doc):
     modify_doc(doc)
 
 # Create and start the Bokeh server
-server = Server({'/': bokeh_app})
+server = Server({'/': bokeh_app}, port=5000, address='132.72.216.33', allow_websocket_origin=["*"])
+print(server.address + ':' + str(server.port))
+
 server.start()
 
 # Run the server until stopped
