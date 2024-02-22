@@ -193,4 +193,17 @@ def place_nan_above_surface(gel, surface):
                     new_gel[t, :, i, j] = np.nan
     return new_gel
 
+def percentile_normalize(x, low_percentile = 0.2, high_percentile= 99.8):
+    '''
+
+    :param x: array
+    :param low_percentile: number in percents
+    :param high_percentile:
+    :return: clips the array and shifts to zero
+    '''
+    min = np.nanpercentile(x,low_percentile)
+    max = np.nanpercentile(x,high_percentile)
+    x = np.clip(x, min,max)
+    x = x - min
+    return x
 
