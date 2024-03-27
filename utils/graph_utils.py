@@ -67,7 +67,7 @@ def xy_matrix_to_r(A, x0, y0):
     r_matrix = np.sqrt((xx-x0) ** 2 + (yy-y0) ** 2).astype(int)
     r_line= np.zeros(int(np.nanmax(r_matrix)))
     for r in range(int(np.nanmax(r_matrix))):
-        r_line[r] = np.nanmean(A[r_matrix == r])
+        r_line[r] = np.nanmean(A[r-1 <=r_matrix <=r+1])
     return r_line
 
 
@@ -123,6 +123,20 @@ def interpolate_smooth_restore_2d(data, sigma=1.0):
     smoothed_data[nan_indices] = np.nan
 
     return smoothed_data
+
+
+def interpolate_smooth_restore_3d(surface, sigma=1.0):
+    """
+    smoothen surface inplace
+    :param surface: 3d array h=[t,y,x] a 2d
+    :param sigma: gaussian filter sigma
+    :return: smoothed surface
+    """
+    for t in range(len(surface)):
+        surface[t] = interpolate_smooth_restore_2d(surface[t])
+    return surface
+
+
 
 import numpy as np
 from scipy.ndimage import gaussian_filter

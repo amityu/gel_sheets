@@ -40,8 +40,7 @@ def spatial_autocorr(h,x,y):
     # define the flucutation of h from the mean
     Dh_ = h_ - np.mean(h_)
     #compute the autocorrelation
-    #h_autocorr = myxcorr(Dh_,Dh_)
-    h_autocorr = myxcorr(h_, h_ )
+    h_autocorr = myxcorr(Dh_,Dh_)
     #define lag coordinate vectors for h_autocorr
     N,M = h_autocorr.shape
     xlag = np.arange(-M//2,M//2)*dx

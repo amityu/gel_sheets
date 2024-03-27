@@ -22,7 +22,8 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie ='150721'
 #movie ='100621'
 #movie ='130721_CCA60_RAW'
-movie ='280523 AM100 568_1'
+#movie ='280523 AM100 568_1'
+movie = 'cca120_am200'
 ADD_PATH = os.path.join(PROJECT_PATH, "add_data/", movie + "/")
 
 
@@ -30,8 +31,9 @@ MOVIE_PATH = DATA_PATH +  movie + '/'
 GRAPH_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/'
 
 
-data = np.load(MOVIE_PATH + 'np/motors_norm.npy')
-
+data = np.load(MOVIE_PATH + 'np/gel_norm.npy')
+ymin = 0.6
+ymax = 3.2
 
 def modify_doc(doc):
 
@@ -48,10 +50,11 @@ def modify_doc(doc):
 
             # Initialize data source
             self.source = ColumnDataSource(data={'z': np.arange(self.z-2), 'value': data[0, 2:, self.y//2, self.x//2]})
-
+            self.mean_source = ColumnDataSource(data={'z': np.arange(self.z-2), 'value': np.nanmean(data[0, 2:, :, :], axis=(1, 2))})
             # Create line plot
-            self.p = figure(title="Line Plot Along Z Axis", width=600, height=300, y_range=(0.6, 1.5))
+            self.p = figure(title="Line Plot Along Z Axis", width=600, height=300, y_range=(ymin, ymax))
             self.p.line('z', 'value', source=self.source)
+            self.p.line('z', 'value', source=self.mean_source, color='red')
             self.p.xaxis.axis_label = "Z axis"
             self.p.yaxis.axis_label = "(Intensity) Value"
             # Create a dropdown menu for sigma
@@ -69,6 +72,7 @@ def modify_doc(doc):
             x = int(self.x_slider.value)
             new_data = {'z': np.arange(self.z), 'value': self.data[t, :, y, x].copy()}
             self.source.data = new_data
+            self.mean_source.data = {'z': np.arange(self.z), 'value': np.nanmean(self.data[t, :, :, :], axis=(1, 2))}
             self.update_sigma(None, None, None)
         def update_sigma(self, attr, old, new):
             # Retrieve the current data
@@ -82,12 +86,16 @@ def modify_doc(doc):
 
             if sigma > 0:
                 filtered_data = gaussian_filter1d(line_values, sigma=sigma)
+                filtered_Data_mean = gaussian_filter1d(self.mean_source.data['value'], sigma=sigma)
             else:
                 filtered_data = line_values
+                filtered_Data_mean = self.mean_source.data['value']
             new_data = {'z': np.arange(self.z), 'value': filtered_data}
+            new_data_mean = {'z': np.arange(self.z), 'value': filtered_Data_mean}
 
 
             self.source.data = new_data
+            self.mean_source.data = new_data_mean
 
 
 
