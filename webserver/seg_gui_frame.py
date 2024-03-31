@@ -7,6 +7,8 @@ from scipy.ndimage import gaussian_filter
 # app.py
 global y,t
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
+DATA_PATH ='D:/amityu/backoffice_data/'
+
 #movie = 'Control'
 #movie = '130721'
 #movie ='140721'
@@ -16,8 +18,8 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie ='280523 AM100 568_1'
 #movie = 'control_1_050721'
 #movie = 'cca120'
-#movie = 'cca120_am200'
-movie ='280523 AM100 568_3'
+movie = 'cca120_am200'
+#movie ='280523 AM100 568_3'
 MOVIE_PATH = DATA_PATH +  movie + '/'
 TMP_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/tmp/'
 global y,t, image_url
