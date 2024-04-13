@@ -7,18 +7,18 @@ from scipy.ndimage import gaussian_filter
 # app.py
 global y,t
 DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-DATA_PATH ='D:/amityu/backoffice_data/'
+#DATA_PATH ='D:/amityu/backoffice_data/'
 
 #movie = 'Control'
 #movie = '130721'
 #movie ='140721'
 #movie ='150721'
 #movie ='100621'
-#movie = '130721_CCA60_RAW'
+movie = '130721_CCA60_RAW'
 #movie ='280523 AM100 568_1'
 #movie = 'control_1_050721'
 #movie = 'cca120'
-movie = 'cca120_am200'
+#movie = 'cca120_am200'
 #movie ='280523 AM100 568_3'
 MOVIE_PATH = DATA_PATH +  movie + '/'
 TMP_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/tmp/'
@@ -29,8 +29,8 @@ plt.plot([1,2,3,4])
 plt.savefig(image_url)
 plt.close()
 
-gel = np.load(MOVIE_PATH + 'np/gel_norm.npy')#, mmap_mode='r')#[:, 20:,80:]
-surface = np.load(MOVIE_PATH + 'np/height.npy')#, mmap_mode='r')#[:, 20:,80:]
+gel = np.load(MOVIE_PATH + 'np/gel_norm.npy', mmap_mode='r')#[:, 20:,80:]
+surface = np.load(MOVIE_PATH + 'np/spike.npy', mmap_mode='r')#[:, 20:,80:]
 # Replace this with your actual "surface" array
 plot_sigma = 0
 '''
