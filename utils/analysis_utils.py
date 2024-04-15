@@ -59,24 +59,24 @@ def radial_pair_correlation(coordinates, bins, image_shape):
     '''
     radial_distance = np.zeros(int(np.sqrt(image_shape[0]**2 + image_shape[1]**2))+1)
 
-    tree = KDTree(coordinates[:,:2])
+    tree = KDTree(coordinates[:,:2])   # quick methods to calculate distances from points
     dist, ind = tree.query(coordinates[:,0:2],len(coordinates))
     dist = dist.astype(int)
-    for distance_line in dist:
-        for d in distance_line:
-            radial_distance[d] +=1
+    normalized_distribution_list = []
+    for peak_index, distance_peak in enumerate(dist):
+        radial_peak = distance_peak.flatten()
 
+        count, distances = np.histogram(radial_peak, bins)
+        normalized_count = np.zeros(len(count))
+        for i, c in enumerate(count):
+            # normalizing the distribution by an area of the ring that is in the matrix
+            normalized_count[i] = c/get_disc_area_in_matrix(coordinates[peak_index,0], coordinates[peak_index,1], distances[i], distances[i+1], image_shape )
+        #normalizing the histogram so the area under the curve is equal to 1
+        normalized_count = normalized_count/np.sum(normalized_count)
+        normalized_distribution_list.append(normalized_count)
+    return np.mean(np.array(normalized_distribution_list), axis=0), distances # averaging over all points
 
-    radial_distance = radial_distance[1:]
-    mask = radial_distance == 0
-    radial_distance[mask] = 1
-
-    radial_distance = radial_distance/ ((np.arange(len(radial_distance))+1)* np.pi)
-    radial_distance[mask] = 0
-    radial_plot = np.histogram(radial_distance, bins = bins)
-    return radial_plot
-
-def simulate_pair(peak_number, bins, image_shape, epsilon):
+def simulate_pair(peak_number, bins, image_shape, epsilon= 0.01):
     '''
 
     :param n: number of peaks
@@ -85,16 +85,48 @@ def simulate_pair(peak_number, bins, image_shape, epsilon):
     :param epsilon: converging criteria as distance between histograms
     :return: 1d array normalized by perimeter
     '''
-    aggra_radial = np.zeros(int(np.sqrt(image_shape[0]**2 + image_shape[1]**2))+1)
+    coordinates = np.zeros((peak_number,2))
+    coordinates[:, 0] = np.random.randint(0, image_shape[0], peak_number)
+    coordinates[:, 1] = np.random.randint(0, image_shape[1], peak_number)
+
+    aggra_radial = radial_pair_correlation(coordinates, bins, image_shape)[0]
     distance = epsilon +1
-    n = 0
+    n = 1
     while distance > epsilon:
         coordinates = np.zeros((peak_number,2))
         coordinates[:, 0] = np.random.randint(0, image_shape[0], peak_number)
         coordinates[:, 1] = np.random.randint(0, image_shape[1], peak_number)
-        radial_plot = radial_pair_correlation(coordinates, bins, image_shape)
+        radial_plot = radial_pair_correlation(coordinates, bins, image_shape)[0]
         new_aggra_radial = (radial_plot + aggra_radial * n)/(n+1)
-        distance = np.linalg.norm(new_aggra_radial - aggra_radial)
+        distance = np.linalg.norm(new_aggra_radial - aggra_radial)  #stopping createria l2 distance between histograms
         n+=1
         aggra_radial = new_aggra_radial
     return new_aggra_radial
+
+def get_disc_area_in_matrix(x_center, y_center, min_radius, max_radius, shape):
+    '''
+
+    :param x_center:
+    :param y_center:
+    :param min_radius:
+    :param max_radius:
+    :param shape:  size of the matrix the disc is in
+    :return:  the area of the ring that is in the matrix
+    '''
+    return np.sum(create_circle_mask(shape[0],shape[1], x_center,y_center,max_radius)) -np.sum(create_circle_mask(shape[0],shape[1], x_center,y_center,min_radius))
+'
+def create_circle_mask(h, w, center_x, center_y, radius):
+    '''
+
+    :param h:   height of the matreix
+    :param w:  width of the matrix
+    :param center_x:
+    :param center_y:
+    :param radius:
+    :return: circle mask.
+    '''
+    Y, X = np.ogrid[:h, :w]
+    dist_from_center = np.sqrt((X - center_x) ** 2 + (Y - center_y) ** 2)
+
+    mask = dist_from_center <= radius
+    return mask
