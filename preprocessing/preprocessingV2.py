@@ -5,8 +5,33 @@ from skimage import morphology
 from skimage.filters import gaussian, sobel
 from skimage.morphology import ball
 from tqdm import tqdm
+import json
 
+def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
+    dic = {
+        "name": name,
+        "delta x": dx,
+        "delta y": dy,
+        "delta z": dz,
+        "spike in": spike_in,
+        "spike out": spike_out   # excluded
+    }
 
+    # Use json.dump to write dictionary to a file
+    with open(movie_path + 'ex_data.json', 'w') as f:
+        json.dump(dic, f)
+
+def get_merged_spike(movie_path, ex_data):
+    surface = np.load(movie_path + 'np/height.npy')
+    if ex_data['spike in']>= 0:
+        spike = np.load(movie_path + 'np/spike.npy')
+        surface[ex_data['spike in']:ex_data['spike out']] = spike[ex_data['spike in']:ex_data['spike out']]
+    return surface
+
+def get_ex_data(movie_path):
+    with open(movie_path + 'ex_data.json', 'r') as f:
+        ex_data = json.load(f)
+    return ex_data
 def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, time_range=None, selem_radius=2):
     '''
     monomer_rect.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
