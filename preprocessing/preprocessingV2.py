@@ -34,7 +34,7 @@ def get_ex_data(movie_path):
     return ex_data
 def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, time_range=None, selem_radius=2):
     '''
-    monomer_rect.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
+    monomer_rectv1.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
     :param gel: memory map gel, it will be copied and nans will be replaced with zeros 
     :param threshold: if specified, the threshold will be used to create a binary mask, otherwise the threshold will be from monomer data
     :param movie_path: path to the movie
@@ -47,7 +47,7 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, 
     zeros_gel =gel.copy()
     zeros_gel[np.isnan(zeros_gel)] = 0
 
-    monomer_data_df = pd.read_csv(add_path + 'monomer_rect.csv')
+    monomer_data_df = pd.read_csv(add_path + 'monomer_rectv1.csv')
     surface = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     membrane = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     if time_range is None:
