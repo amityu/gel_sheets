@@ -47,7 +47,7 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, 
     zeros_gel =gel.copy()
     zeros_gel[np.isnan(zeros_gel)] = 0
 
-    monomer_data_df = pd.read_csv(add_path + 'monomer_rectv1.csv')
+    monomer_data_df = pd.read_csv(add_path + 'monomer_rect.csv')
     surface = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     membrane = np.zeros((zeros_gel.shape[0],zeros_gel.shape[2], zeros_gel.shape[3]))
     if time_range is None:
