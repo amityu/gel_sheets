@@ -17,7 +17,8 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie = '130721_CCA60_RAW'
 #movie ='280523 AM100 568_1'
 #movie = 'control_1_050721'
-movie = 'cca120'
+#movie = 'cca120'
+movie = 'cca40'
 #movie = 'cca120_am200'
 #movie ='280523 AM100 568_3'
 MOVIE_PATH = DATA_PATH +  movie + '/'
@@ -30,7 +31,7 @@ plt.savefig(image_url)
 plt.close()
 
 gel = np.load(MOVIE_PATH + 'np/gel_norm.npy', mmap_mode='r')#[:, 20:,80:]
-surface = np.load(MOVIE_PATH + 'np/height.npy', mmap_mode='r')#[:, 20:,80:]
+surface = np.load(MOVIE_PATH + 'np/height55.npy', mmap_mode='r')#[:, 20:,80:]
 # Replace this with your actual "surface" array
 plot_sigma = 0
 '''

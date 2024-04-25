@@ -26,7 +26,8 @@ from matplotlib.ticker import FormatStrFormatter
 from tqdm.notebook import tqdm
 import os
 mu_symbol = "\u03BC"
-def plot_segmented_view(ax, channel, surface, t, pixel_size_x, pixel_size_z, vmin,vmax, color_map,y,alpha,draw_segmentation_line =True, nans_outside_gel = True, plot_sigma = 3, mip_width = 1):
+def plot_segmented_view(ax, channel, surface, membrane,t, pixel_size_x, pixel_size_z, vmin,vmax, color_map,y,alpha,draw_segmentation_line =True, nans_outside_gel = True, plot_sigma = 3, mip_width = 1):
+    membrane_plot_sigma = 3
     norm = Normalize(vmin=vmin, vmax=vmax)
     mappable = ScalarMappable(norm=norm, cmap=color_map)
     mappable.set_array(channel[:, :, y, :])
