@@ -41,11 +41,11 @@ def blob_log_coordinates(surface, min_sigma = 15, max_sigma = 40, interpolate_na
 
         # image_max is the dilation of im with a 20*20 structuring element
         # It is used within peak_local_max function
-        image_max = ndi.maximum_filter(im, size=10, mode='constant')
-
+        #image_max = ndi.maximum_filter(im, size=10, mode='constant')
+        image_max = im
         # Comparison between image_max and im to find the coordinates of local maxima
         #coordinates = peak_local_max(image_max, min_distance=15)
-        coordinates_list.append(blob_log(image_max, min_sigma=15))
+        coordinates_list.append(blob_log(image_max, min_sigma=min_sigma, max_sigma=max_sigma))
     return coordinates_list
 
 
@@ -114,7 +114,7 @@ def get_disc_area_in_matrix(x_center, y_center, min_radius, max_radius, shape):
     :return:  the area of the ring that is in the matrix
     '''
     return np.sum(create_circle_mask(shape[0],shape[1], x_center,y_center,max_radius)) -np.sum(create_circle_mask(shape[0],shape[1], x_center,y_center,min_radius))
-'
+
 def create_circle_mask(h, w, center_x, center_y, radius):
     '''
 
