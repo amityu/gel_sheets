@@ -217,7 +217,7 @@ def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coo
     return warped_image_numpy
 
 
-def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df = None, time_range = None):
+def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, transformation_type = 'Rigid', z_df = None, time_range = None):
     '''
     same as stabilize but with stepwise registration
     :param gel: 4d array of gel memory map
@@ -300,7 +300,7 @@ def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mas
             plt.title('fixed mask')
             plt.show()'''
 
-            result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform='Translation', mask=mask,
+            result = ants.registration(fixed=fixed_image, moving=gel_ant, type_of_transform= transformation_type, mask=mask,
                                        moving_mask=moving_mask, mask_all_stages=True, restrict_transformation=(0, 0, 1))
             trans = ants.read_transform(result['fwdtransforms'][0])
             path = transform_path + 'transform' + str(t+1) + '.mat'
