@@ -1,5 +1,8 @@
 import pandas as pd
-#
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.cm import ScalarMappable
+
 
 def add_time_to_df(df, gel_data):
     real_df = pd.read_excel(gel_data['data_path'] + 'add_data/%s_data.xlsx'%gel_data['name'])
@@ -221,3 +224,41 @@ def percentile_normalize(x, low_percentile = 0.2, high_percentile= 99.8):
     x = x - min
     return x
 
+
+def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sigma=3, t_values=3, suffix=''):
+    if t_values == -1:
+        t_values = range(len(gel))
+
+    # Create a function to update the plot for each t value
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (15,5))
+
+    sm = ScalarMappable(cmap='coolwarm')
+    sm.set_array(h)
+    cbar = plt.colorbar(sm ,ax= ax2)
+
+    def update(t):
+        if t/4 == int(t/4):
+            ax1.clear()
+            ax2.clear()
+            h = surface[t]
+            img = gel[t, :, y, :]
+            ax1.imshow(img, origin='lower', cmap='coolwarm', aspect='auto')
+            ax1.set_xlabel('X (Pixels)')
+            ax1.set_ylabel('Z (Pixels)')
+            ax1.set_title('Gel Corrected by illumination filter \n y=%d' % y)
+            ax1.plot(gaussian_filter(h[y, :], sigma=plot_sigma), 'y', linestyle='--')
+            ax2.imshow(h, origin='lower', cmap='coolwarm', vmax=v_max, vmin=v_min)
+            ax2.hlines(y=y, xmin=0, xmax=h.shape[0], color='b')
+
+            ax2.set_xlabel('X (Pixels)')
+            ax2.set_ylabel('Y (Pixels)')
+            ax2.set_title('Surface computed \n y=%d' % y)
+            fig.suptitle('Segmentation Time=%d \n Gel %s' % (t, movie_name))
+
+    # Create the animation
+    animation = FuncAnimation(fig, update, frames=t_values, repeat=False, interval=1000)  # 1 second per frame
+
+    # Save the animation as an MPEG file
+    animation.save(out_put_path + '%s_%s.avi' % (movie_name, suffix), writer='ffmpeg', extra_args=['-crf', '8'],
+                   codec='h264', fps=4)
