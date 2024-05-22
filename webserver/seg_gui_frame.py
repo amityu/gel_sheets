@@ -18,7 +18,9 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie ='280523 AM100 568_1'
 #movie = 'control_1_050721'
 #movie = 'cca120'
-movie = 'cca40'
+#movie = 'cca40'
+#movie = 'cca300'
+movie = 'cca60_dist'
 #movie = 'cca120_am200'
 #movie ='280523 AM100 568_3'
 MOVIE_PATH = DATA_PATH +  movie + '/'
@@ -32,6 +34,7 @@ plt.close()
 
 gel = np.load(MOVIE_PATH + 'np/gel_norm.npy', mmap_mode='r')#[:, 20:,80:]
 surface = np.load(MOVIE_PATH + 'np/height55.npy', mmap_mode='r')#[:, 20:,80:]
+#surface = np.load(DATA_PATH + 'boundary/{}_height_std45.0.npy'.format(movie), mmap_mode='r')
 # Replace this with your actual "surface" array
 plot_sigma = 0
 '''
@@ -85,7 +88,7 @@ def update_plot():
     cbar = plt.colorbar(sm ,ax= ax2)
 
     img = gel[t,:,y,:]
-    ax1.imshow(img,origin='lower', cmap='coolwarm')
+    ax1.imshow(img,origin='lower', cmap='coolwarm', aspect='auto')
     ax1.set_xlabel('X (Pixels)')
     ax1.set_ylabel('Z (Pixels)')
     ax1.set_title('Gel Corrected by illumination filter \n y=%d'%y)
@@ -130,7 +133,7 @@ ax1.set_ylabel('Z (Pixels)')
 ax1.set_title('Gel Corrected by illumination filter \n y=%d'%y)
 
 ax1.plot(gaussian_filter(h[y,: ],sigma = plot_sigma ), 'y', linestyle='--')
-im= ax2.imshow(h, origin='lower', cmap='coolwarm', vmax = vmax, vmin = vmin )
+im= ax2.imshow(h, origin='lower', cmap='coolwarm', v_max = v_max, v_min = v_min )
 ax2.hlines(y=y, xmin=0, xmax=h.shape[0], color='b')
 
 ax2.set_xlabel('X (Pixels)')

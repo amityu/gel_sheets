@@ -225,20 +225,45 @@ def percentile_normalize(x, low_percentile = 0.2, high_percentile= 99.8):
     return x
 
 
-def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sigma=3, t_values=3, suffix=''):
+def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sigma=3, t_values=-1, suffix=''):
+    """
+    :param gel: A 4-dimensional numpy array representing the gel data
+    :param surface: A 3-dimensional numpy array representing the surface data
+    :param movie_name: The name of the movie
+    :param out_put_path: The output path for the animation file
+    :param y: The y-coordinate value
+    :param plot_sigma: The sigma value for the Gaussian filter
+    :param t_values: The array of time values for the animation frames
+    :param suffix: The suffix for the animation file name
+    :return: None
+
+    This method creates an animation of gel segmentation. It takes the gel data, surface data, movie name, output path,
+    y-coordinate value, plot sigma, time values, and suffix as parameters. It creates a plot with two subplots, one for the
+    gel data and one for the surface data. The gel data is updated for each time value using a function called update. The
+    animation is then created using the FuncAnimation class from matplotlib. Finally, the animation is saved as an AVI file
+    using the specified output path and file name.
+
+
+
+    """
     if t_values == -1:
-        t_values = range(len(gel))
+        t_values = np.arange(0, len(gel), 0.25)
+    v_min = np.nanmin(gel[:, :, y, :])
+    v_max = np.nanmax(gel[:, :, y, :])
+    v_min_boundary = np.nanmin(surface)
+    v_max_boundary = np.nanmax(surface)
 
     # Create a function to update the plot for each t value
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (15,5))
 
     sm = ScalarMappable(cmap='coolwarm')
-    sm.set_array(h)
+    sm.set_array(gel[:, :, y, :])
     cbar = plt.colorbar(sm ,ax= ax2)
 
     def update(t):
-        if t/4 == int(t/4):
+        if t == int(t):
+            t = int(t)
             ax1.clear()
             ax2.clear()
             h = surface[t]
@@ -248,8 +273,8 @@ def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sig
             ax1.set_ylabel('Z (Pixels)')
             ax1.set_title('Gel Corrected by illumination filter \n y=%d' % y)
             ax1.plot(gaussian_filter(h[y, :], sigma=plot_sigma), 'y', linestyle='--')
-            ax2.imshow(h, origin='lower', cmap='coolwarm', vmax=v_max, vmin=v_min)
-            ax2.hlines(y=y, xmin=0, xmax=h.shape[0], color='b')
+            ax2.imshow(h, origin='lower', cmap='coolwarm', vmax=v_max_boundary, vmin=v_min_boundary)
+            ax2.hlines(y=y, xmin=0, xmax=h.shape[1], color='b')
 
             ax2.set_xlabel('X (Pixels)')
             ax2.set_ylabel('Y (Pixels)')
@@ -257,7 +282,7 @@ def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sig
             fig.suptitle('Segmentation Time=%d \n Gel %s' % (t, movie_name))
 
     # Create the animation
-    animation = FuncAnimation(fig, update, frames=t_values, repeat=False, interval=1000)  # 1 second per frame
+    animation = FuncAnimation(fig, update, frames=t_values, repeat=False, interval=250)  # 1 second per frame
 
     # Save the animation as an MPEG file
     animation.save(out_put_path + '%s_%s.avi' % (movie_name, suffix), writer='ffmpeg', extra_args=['-crf', '8'],

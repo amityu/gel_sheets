@@ -8,19 +8,45 @@ from matplotlib.animation import FuncAnimation
 import pandas as pd
 from tqdm.notebook import trange, tqdm
 import numpy as np
-import json
-import importlib
-from numpy.fft import fft2, fftshift,ifftshift
-from analysis import curvature_exec as curv
-from scipy import ndimage as ndi
-import matplotlib.pyplot as plt
-from skimage.feature import peak_local_max
 from skimage import data, img_as_float
 from skimage.feature import blob_log
 from sklearn.neighbors import KDTree
 from scipy import interpolate
-
 mu_symbol = "\u03BC"
+import cupy as cp
+import numpy as np
+import gc
+
+def histogram_cupy(data, bins, chunk_size = 50000000):
+    hist_accum = cp.zeros(bins, dtype=cp.int32)
+
+    min_val = np.min(data)
+    max_val = np.max(data)
+    if type(bins) is int:
+
+        bin_edges = np.linspace(min_val, max_val, bins + 1)
+    else:
+        bin_edges = bins
+        hist_accum = cp.zeros(len(bins)-1, dtype=cp.int32)
+
+
+    for start in range(0, len(data), chunk_size):
+        end = min(start + chunk_size, len(data))
+        chunk = data[start:end]
+
+        data_gpu = cp.array(chunk, dtype=cp.float32)
+        hist, _ = cp.histogram(data_gpu, bins=bin_edges)
+
+        hist_accum += hist
+
+        # Free GPU memory
+        del data_gpu
+        cp.get_default_memory_pool().free_all_blocks()
+        gc.collect()
+
+    hist_accum_host = cp.asnumpy(hist_accum)
+
+    return hist_accum_host, bin_edges
 def blob_log_coordinates(surface, min_sigma = 15, max_sigma = 40, interpolate_nan = True):
     coordinates_list = []
     for t in trange(len(surface)):

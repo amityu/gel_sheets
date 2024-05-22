@@ -39,7 +39,7 @@ class CurveImage:
                   text_font_size='16pt', background_fill_alpha=0.3, text_color = 'red')
         self.p.add_layout(label)
         # Create a diverging palette
-        #mapper = LogColorMapper(palette='Viridis256', low=vmin, high=vmax)
+        #mapper = LogColorMapper(palette='Viridis256', low=v_min, high=v_max)
         mapper = LinearColorMapper(palette='Viridis256', low=vmin, high=vmax)
 
         color_bar = ColorBar(color_mapper=mapper, location=(0,0))

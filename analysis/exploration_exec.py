@@ -177,7 +177,7 @@ for t in t_range:
     curv = gaussian_curvature(Z)
     axes[row, col].set_title('Gaussian Curvature sigma =5  T = %d'%t, fontsize = 20)
     #set colorbar limits from -2 to 2
-    axes[row, col].imshow(gaussian(curv,5),cmap='seismic', vmin = -1, vmax = 1)
+    axes[row, col].imshow(gaussian(curv,5),cmap='seismic', v_min = -1, v_max = 1)
     # set labels X,Y to axes
     axes[row, col].set_xlabel('X', fontsize = 16)
     axes[row, col].set_ylabel('Y' ,fontsize = 16)
@@ -492,9 +492,9 @@ def a13():
 
     # In[2]:
 
-def surface_stat_save(movie, save_plot = False):
+def surface_stat_save(movie, save_plot = False, std_string=""):
 
-        surface = np.load(DATA_PATH +  movie + '/' + 'np/height.npy')
+        surface = np.load(DATA_PATH +  movie + '/' + 'np/height{}.npy'.format(std_string))
         mean_list = []
         std_list = []
         fluctations_list = []
@@ -515,13 +515,13 @@ def surface_stat_save(movie, save_plot = False):
         return df
 
 
-def surface_distribution_save(movie, channel='gel_norm', save_plot = False):
+def surface_distribution_save(movie, channel='gel_norm', save_plot = False, std_string=""):
     warnings.filterwarnings(action='ignore', category=RuntimeWarning)
     gel = np.load(DATA_PATH +  movie + '/' + 'np/%s.npy'%channel)
     # Assuming gel is your numpy array
     #threshold = np.percentile(gel[~np.isnan(gel)], 99.8)  # Find the 99.8 percentile of all values in gel
     #gel = np.where(gel > threshold, np.nan, gel)  # Replace all values above the threshold with NaN
-    surface = np.load(DATA_PATH +  movie + '/' + 'np/height.npy', mmap_mode='r')
+    surface = np.load(DATA_PATH +  movie + '/' + 'np/height%s.npy'%std_string, mmap_mode='r')
     gel = gu.place_nan_above_surface(gel, surface)
     mean_list = []
     std_list = []

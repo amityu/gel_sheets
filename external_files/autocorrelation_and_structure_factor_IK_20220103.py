@@ -155,7 +155,7 @@ def IK_reverse_and_conj(x,axes):
     Reverse array `x` in dimensions specified in axes and perform the complex conjugate
     """
     
-    # Create slice tuple
+    # Create gel_slice tuple
     reverse = ()
     for n in range(x.ndim):
         if n in axes:
