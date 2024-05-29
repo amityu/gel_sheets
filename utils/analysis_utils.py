@@ -47,6 +47,34 @@ def histogram_cupy(data, bins, chunk_size = 50000000):
     hist_accum_host = cp.asnumpy(hist_accum)
 
     return hist_accum_host, bin_edges
+
+import time
+
+def benchmark_histogram_computation():
+
+    # Generate random data
+    data = np.random.randn(10000000)
+    bins = 50
+
+    # Define different chunk sizes to test
+    chunk_sizes = [1000000, 2000000, 5000000, 10000000, 50000000,100000000]
+
+
+    # Find the best chunk size
+    best_chunk_size = min(results, key=lambda x: x[1])[0]
+    print(f"Best chunk size: {best_chunk_size}")
+    results = []
+
+    for chunk_size in chunk_sizes:
+        start_time = time.time()
+        histogram_cupy(data, bins, chunk_size)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        results.append((chunk_size, elapsed_time))
+        print(f"Chunk size: {chunk_size}, Time: {elapsed_time:.2f} seconds")
+
+    return results
+
 def blob_log_coordinates(surface, min_sigma = 15, max_sigma = 40, interpolate_nan = True):
     coordinates_list = []
     for t in trange(len(surface)):

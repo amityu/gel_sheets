@@ -92,8 +92,10 @@ def yuval_ticks(x_lag, gap=50):
 
 from scipy.interpolate import griddata
 
-def interpolate_smooth_restore_2d(data, sigma=1.0):
+def interpolate_smooth_restore_2d(data, sigma=1.0, restore_nan = True):
+
     """
+
     Interpolate missing values, apply Gaussian smoothing, and restore NaN values in a 2D array.
 
     Parameters:
@@ -123,10 +125,49 @@ def interpolate_smooth_restore_2d(data, sigma=1.0):
     smoothed_data = gaussian_filter(interpolated_data, sigma=sigma)
 
     # Replace NaN values in the smoothed data with NaN values from the original data
-    smoothed_data[nan_indices] = np.nan
+    if restore_nan:
+        smoothed_data[nan_indices] = np.nan
 
     return smoothed_data
 
+import numpy as np
+from scipy.interpolate import griddata
+from scipy.ndimage import gaussian_filter
+
+
+def interpolate_until_filled(data, method='linear'):
+    while np.isnan(data).any():
+        x = np.arange(data.shape[0])
+        y = np.arange(data.shape[1])
+        # Create coordinates for all values in the input data, and separate coordinates into those corresponding to NaN and non-NaN values.
+        X, Y = np.meshgrid(x, y)
+        xy_non_nan = np.array([X[~np.isnan(data)], Y[~np.isnan(data)]]).T
+        xy_nan = np.array([X[np.isnan(data)], Y[np.isnan(data)]]).T
+        # Interpolate NaN values based on the non-NaN values
+        data[np.isnan(data)] = griddata(xy_non_nan, data[~np.isnan(data)], xy_nan, method=method)
+    return data
+
+
+def interpolate_smooth_2d(data, sigma=1.0, restore_nan=False):
+    """
+    Interpolate missing values, apply Gaussian smoothing, and restore NaN values in a 2D array.
+    Parameters:
+        data (numpy.ndarray): Input 2D array with NaN values.
+        sigma (float): Standard deviation for the Gaussian filter (controls smoothing).
+    Returns:
+        numpy.ndarray: Processed 2D array with interpolated and smoothed values, and NaN values restored.
+    """
+    # Find indices of NaN values
+    data = data.copy()
+    nan_indices = np.isnan(data)
+    # Interpolate until all NaN values are filled
+    interpolated_data = interpolate_until_filled(data)
+    # Apply the Gaussian filter
+    smoothed_data = gaussian_filter(interpolated_data, sigma=sigma)
+    # Replace NaN values in the smoothed data with NaN values from the original data
+    if restore_nan:
+        smoothed_data[nan_indices] = np.nan
+    return smoothed_data
 
 def interpolate_smooth_restore_3d(surface, sigma=1.0):
     """
@@ -139,10 +180,18 @@ def interpolate_smooth_restore_3d(surface, sigma=1.0):
         surface[t] = interpolate_smooth_restore_2d(surface[t])
     return surface
 
+from scipy.interpolate import griddata
+from scipy import ndimage
 
 
-import numpy as np
-from scipy.ndimage import gaussian_filter
+def interpolate_nan_arr(arr, max_iter=100):
+    for _ in range(max_iter):
+        if np.isnan(arr).any():
+            nan_mask = np.isnan(arr)
+            arr[nan_mask] = ndimage.generic_filter(arr, np.nanmean, size=5, mode='constant', cval=np.NaN)[nan_mask]
+        else:
+            break
+    return arr
 
 def interpolate_smooth_restore_1d(data, sigma=1.0):
     """
