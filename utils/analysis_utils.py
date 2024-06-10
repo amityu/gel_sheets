@@ -17,17 +17,25 @@ import cupy as cp
 import numpy as np
 import gc
 
-def histogram_cupy(data, bins, chunk_size = 50000000):
-    hist_accum = cp.zeros(bins, dtype=cp.int32)
+def histogram_cupy(data, bins, density = True, chunk_size = 50000000):
+    """
+    :param data: An array-like object containing the data for which the histogram needs to be computed.
+    :param bins: The number of bins to use for the histogram. Can be an integer specifying the number of bins or a NUMPY  array specifying the bin edges.
+    :param chunk_size: The size of each chunk of data to process at a time. Defaults to 50000000.
+
+    :return: A tuple containing the histogram values and the bin edges.
+
+    """
 
     min_val = np.min(data)
     max_val = np.max(data)
-    if type(bins) is int:
+    if  not isinstance(bins, np.ndarray):
+        hist_accum = cp.zeros(bins, dtype=cp.int64)
 
         bin_edges = np.linspace(min_val, max_val, bins + 1)
     else:
         bin_edges = bins
-        hist_accum = cp.zeros(len(bins)-1, dtype=cp.int32)
+        hist_accum = cp.zeros(len(bins)-1, dtype=cp.int64)
 
 
     for start in range(0, len(data), chunk_size):
@@ -45,7 +53,8 @@ def histogram_cupy(data, bins, chunk_size = 50000000):
         gc.collect()
 
     hist_accum_host = cp.asnumpy(hist_accum)
-
+    if density:
+        hist_accum_host=hist_accum_host/np.sum(hist_accum_host)
     return hist_accum_host, bin_edges
 
 import time

@@ -12,6 +12,8 @@ import time
 import multiprocessing
 from functools import partial
 from tqdm import trange
+import ants
+from scipy.ndimage import gaussian_filter
 
 
 def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
@@ -48,7 +50,7 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, 
     :param time_range: if None, all time points will be used
     :param selem_radius: radius of the ball used for dilation
     :return: 3d array of surface, and 3d array of membrane, dtype = int
-    ''' 
+    '''
 
     zeros_gel =gel.copy()
     zeros_gel[np.isnan(zeros_gel)] = 0
@@ -375,5 +377,25 @@ def mp_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_
 
     return results
 
-# Call your function with the appropriate arguments
-# result = stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, z_df, time_range)
+
+def apply_transform(gel,PROJECT_PATH, movie):
+    gel_transformed = np.zeros(gel.shape, dtype=np.float32)
+    for t in trange(len(gel)):
+        numpy_image = np.array(np.transpose(gel[t], (2,1,0)))
+        image = ants.from_numpy(numpy_image)
+        path = PROJECT_PATH + 'add_data/%s/transform/transform%d.mat' % (movie,t+1)
+        new_image = ants.apply_transforms(fixed=image, moving=image, transformlist=path, defaultvalue=0)
+        gel_transformed[t] = np.transpose(new_image.numpy(), (2,1,0))
+    gel_transformed[gel_transformed == 0] = np.nan
+    return gel_transformed
+
+
+def apply_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illumination_sigma):
+    gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float16)
+    for t in trange(len(gel_transformed)):
+        gel_slice = np.nanmean(gel_transformed[t, min_z_filter:max_z_filter, :, :], axis=0)
+        gel_slice[np.isnan(gel_slice)] = np.nanmean(gel_slice)
+        illumination_filter = gaussian_filter(gel_slice, sigma=illumination_sigma)
+
+        gel_corrected[t] = (gel_transformed[t]/illumination_filter).copy()
+    return gel_corrected
