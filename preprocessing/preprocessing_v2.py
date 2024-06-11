@@ -14,7 +14,7 @@ from functools import partial
 from tqdm import trange
 import ants
 from scipy.ndimage import gaussian_filter
-
+import os
 
 def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
     dic = {
@@ -391,11 +391,106 @@ def apply_transform(gel,PROJECT_PATH, movie):
 
 
 def apply_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illumination_sigma):
+    """
+    Apply an illumination filter to the given gel_transformed image.
+
+    :param gel_transformed: The transformed gel image to apply the filter to.
+    :type gel_transformed: numpy.ndarray
+
+    :param min_z_filter: The minimum z value to consider when creating the illumination filter.
+    :type min_z_filter: float
+
+    :param max_z_filter: The maximum z value to consider when creating the illumination filter.
+    :type max_z_filter: float
+
+    :param illumination_sigma: The sigma value to use for the illumination filter.
+    :type illumination_sigma: float
+
+    :return: The corrected gel image after applying the illumination filter.
+    :rtype: numpy.ndarray
+    """
     gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float16)
     for t in trange(len(gel_transformed)):
-        gel_slice = np.nanmean(gel_transformed[t, min_z_filter:max_z_filter, :, :], axis=0)
-        gel_slice[np.isnan(gel_slice)] = np.nanmean(gel_slice)
-        illumination_filter = gaussian_filter(gel_slice, sigma=illumination_sigma)
+
+        illumination_filter = get_illumination_filter(gel[t],min_z_filter, max_z_filter, illumination_sigma)
 
         gel_corrected[t] = (gel_transformed[t]/illumination_filter).copy()
     return gel_corrected
+
+
+def get_illumination_filter(gel_at_t, min_z_filter, max_z_filter, illumination_sigma):
+    """
+    Calculate the illumination filter for a gel image at time t.
+
+    :param gel_at_t: The gel image at time t.
+    :type gel_at_t: numpy.ndarray
+
+    :param min_z_filter: The minimum z-filter value.
+    :type min_z_filter: int
+
+    :param max_z_filter: The maximum z-filter value.
+    :type max_z_filter: int
+
+    :param illumination_sigma: The standard deviation for the Gaussian filter used for illumination correction.
+    :type illumination_sigma: float
+
+    :return: The illumination filter for the gel image at time t.
+    :rtype: numpy.ndarray
+    """
+    gel_slice = np.nanmean(gel_at_t[min_z_filter:max_z_filter, :, :], axis=0)
+    gel_slice[np.isnan(gel_slice)] = np.nanmean(gel_slice)
+    illumination_filter = gaussian_filter(gel_slice, sigma=illumination_sigma)
+    return illumination_filter
+
+
+def get_file_list(files_path, parse = lambda x:x.split('_')[-2][1:]):
+    """
+
+    :param files_path: The path of the directory containing the files.
+    :param parse: function to extract image time frame index (t) out of file name
+    :return: A list of file names in the given directory, sorted by a specific number in the file name.
+
+    """
+    filelist = os.listdir(files_path)
+    file_list_numbered = []
+    for i in range(len(filelist)):
+        # split file by '_'
+        t = int(parse(filelist[i]))
+        file_list_numbered.append((t,filelist[i]))
+        # sort by time
+    file_list_numbered.sort(key = lambda x: x[0])
+    for t in range(len(file_list_numbered)):
+        print(file_list_numbered[t][0],file_list_numbered[t][1])
+    return [t[1] for t in file_list_numbered]
+
+
+def get_max_z(gel_list):
+    max_z = 0
+    for t, image in enumerate(gel_list):
+        print(t,':',image.shape)
+        z = image.shape[0]
+        if z > max_z:
+            max_z = z
+    print('max_z_value', max_z)
+    return max_z
+
+
+def make_numpy_from_list(gel_list, max_z):
+    """
+    Convert a list of gel arrays into a numpy array.
+
+    :param gel_list: A list of gel arrays.
+    :type gel_list: list
+    :param max_z: The maximum value of z dimension.
+    :type max_z: int
+    :return: A numpy array containing the gel arrays.
+    :rtype: numpy.ndarray numpy.float 16
+    """
+    gel = np.zeros((len(gel_list), max_z,*gel_list[0].shape[1:]), dtype=np.float16)
+    gel[gel == 0] = np.nan
+    for t in range(len(gel)):
+        gel[t,:gel_list[t].shape[0],:,:] = gel_list[t]
+
+    return gel
+
+
