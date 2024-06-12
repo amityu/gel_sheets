@@ -4,17 +4,17 @@ from scipy.ndimage import label
 from skimage import morphology
 from skimage.filters import gaussian, sobel
 from skimage.morphology import ball
-from tqdm import tqdm
+from tqdm.notebook import tqdm, trange
 import json
 import ants
 import tifffile
 import time
 import multiprocessing
 from functools import partial
-from tqdm import trange
 import ants
 from scipy.ndimage import gaussian_filter
 import os
+from scipy.optimize import curve_fit
 
 def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
     dic = {
@@ -493,4 +493,87 @@ def make_numpy_from_list(gel_list, max_z):
 
     return gel
 
+# Define the Gaussian function
+def fit_gaussian(x, mu, sigma, amplitude):
+    return amplitude * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+
+
+def fit_monomer(gel, monomer_data_df):
+    """
+
+    :param gel: a 4D numpy array representing the gel image data
+    :param monomer_data_df: a pandas DataFrame containing monomer data with columns 'frame', 'Z', 'Y', 'X', 'r_size', 'gap_from_surface', 'y_gap'
+    :return: the updated monomer_data_df DataFrame with added columns 'gaussian_mean' and 'gaussian_std'
+
+    This method takes in a gel image and monomer data, and fits a Gaussian curve to each monomer in the gel image. It calculates the mean and standard deviation of the Gaussian curve for
+    * each monomer and adds these values as columns 'gaussian_mean' and 'gaussian_std' to the monomer_data_df DataFrame.
+
+    """
+    monomer_data_df.set_index('frame')
+    i_mean_list = []
+    i_std_list = []
+    max_intensity = np.nanpercentile(gel, 99.7)
+    min_intensity = np.nanmin(gel)
+    bin_number = 50
+    bins = np.linspace(min_intensity, max_intensity, bin_number + 1)
+    for t in trange(len(gel)):
+        iz = monomer_data_df.loc[t, 'Z']
+        iy = monomer_data_df.loc[t, 'Y']
+        ix = monomer_data_df.loc[t, 'X']
+        r_size = monomer_data_df.loc[t, 'r_size']
+        gap_from_surface = monomer_data_df.loc[t, 'gap_from_surface']
+        y_gap = monomer_data_df.loc[t, 'y_gap']
+        data_corrected = gel[t, iz+gap_from_surface:iz+r_size, iy:iy+y_gap, ix:ix+r_size]
+
+        data_corrected = data_corrected[~np.isnan(data_corrected)]
+        if data_corrected.size == 0:
+            i_mean_list.append(np.nan)
+            i_std_list.append(np.nan)
+            continue
+        interpolated_x, smoothed_y, density, mean, std, amp = plot_data(data_corrected, bins=bins)
+        i_mean_list.append(mean)
+        i_std_list.append(std)
+    monomer_data_df['gaussian_mean'] = i_mean_list
+    monomer_data_df['gaussian_std'] = i_std_list
+    return monomer_data_df
+
+
+def plot_data(data, bins):
+    """
+    :param data: An array or list of numerical data to be plotted.
+    :param bins: An integer or array specifying the number of bins or the boundaries of the bins for the histogram.
+    :return: A tuple containing interpolated x-coordinates, smoothed y-coordinates, density function, optimized mean
+    value, optimized standard deviation, and optimized amplitude of the fitted
+    * curve.
+
+    """
+    hist, _ = np.histogram(data[~np.isnan(data)], bins=bins, density=True)
+    mean = np.nanmean(data)
+    std = np.nanstd(data)
+
+    # Calculate the bin widths
+    bin_widths = bins[1:] - bins[:-1]
+    bin_gap_mid = (bins[1] - bins[0])/ 2
+    # Calculate the density function
+    density = hist / np.sum(hist * bin_widths)
+
+    x_data = np.linspace(bins[0] + bin_gap_mid , bins[-1] - bin_gap_mid, len(density))
+    y_data = density
+
+    # Fit the Gaussian function to the data
+    initial_guess = [mean, std, 1]  # Initial guess for the parameters: [mu, sigma, amplitude]
+    optimized_params, _ = curve_fit(fit_gaussian, x_data, y_data, p0=initial_guess)
+
+    # Extract the optimized parameter values
+    mu_opt, sigma_opt, amplitude_opt = optimized_params
+
+    # Generate the fitted curve using the optimized parameters
+    y_fitted = fit_gaussian(x_data, mu_opt, sigma_opt, amplitude_opt)
+    new_indices = np.linspace(0, len(y_fitted) - 1, 50 * len(y_fitted))
+
+    # Perform interpolation
+    interpolated_y = np.interp(new_indices, range(len(y_fitted)), y_fitted)
+    interpolated_x = np.interp(new_indices, range(len(y_fitted)), x_data)
+    smoothed_y = gaussian_filter(interpolated_y, sigma=15)
+    return interpolated_x, smoothed_y, density,  mu_opt, sigma_opt, amplitude_opt
 
