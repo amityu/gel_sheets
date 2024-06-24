@@ -31,9 +31,9 @@ def load_tracking_data(_csv_file):
 
 # Initialize data
 DATA_PATH = r'C:\Users\amityu\Gel_Drop_Data'
-image_folder = os.path.join(DATA_PATH , r'175_950_ex1_clip')
+image_folder = os.path.join(DATA_PATH , r'yuval_clip')
 print(image_folder)
-csv_file = os.path.join(DATA_PATH, 'local_spots.csv')
+csv_file = os.path.join(r'C:\Users\amityu\Gel_Drop_Data\yuval_local\trackmate.csv')
 images = np.array(load_images(image_folder))
 tracking_data = load_tracking_data(csv_file)
 #tracks = tracking_data[tracking_data['FRAME']==488]
@@ -49,7 +49,7 @@ selected_track_source = ColumnDataSource(data={'x': [], 'y': []})
 plot = figure(width=700, height=700, x_range=(0, images[0].shape[1]), y_range=(0, images[0].shape[0]), tools="tap")
 plot.image(image='image', x=0, y=0, dw=images[0].shape[1], dh=images[0].shape[0], source=image_source)#, color_mapper=color_mapper,)
 #track_renderer = plot.circle('x', 'y', size=5, color='red', source=track_source, radius=4, fill_color=None)
-selected_track_renderer = plot.circle('x', 'y', size=5, color='blue', source=selected_track_source,radius=4, fill_color=None)
+selected_track_renderer = plot.circle('x', 'y',  color='blue', source=selected_track_source,radius=4, fill_color=None)
 
 # Define additional tools
 additional_tools = [SaveTool()]
