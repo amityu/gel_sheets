@@ -337,8 +337,8 @@ def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sig
     animation.save(out_put_path + '%s_%s.avi' % (movie_name, suffix), writer='ffmpeg', extra_args=['-crf', '8'],
                    codec='h264', fps=4)
 
-def show_imshow_sequence_with_colorbar(image_seq, time_points,title, col_no=5):
-    rows_no = len(image_seq)//col_no + 1
+def show_imshow_sequence_with_colorbar(image_seq, time_points,title='', col_no=5):
+    rows_no = len(time_points)//col_no + 1
     fig, axes = plt.subplots(rows_no,col_no, figsize = (30,30))
     vmin = np.nanmin(image_seq)
     vmax = np.nanmax(image_seq)
