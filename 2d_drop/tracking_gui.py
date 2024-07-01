@@ -3,12 +3,14 @@ from bokeh.models import ColumnDataSource, Slider, Select, Button, Toggle, Range
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.events import Tap
+from bokeh.palettes import Category20
+
 import tifffile
 import pandas as pd
 import numpy as np
 from PIL import Image
 import os
-
+import random
 
 # Load images and tracking data
 def load_images(_image_folder):
@@ -31,25 +33,52 @@ def load_tracking_data(_csv_file):
 
 # Initialize data
 DATA_PATH = r'C:\Users\amityu\Gel_Drop_Data'
-image_folder = os.path.join(DATA_PATH , r'yuval_clip')
+
+
+
+#local_path = 'eye_local'
+local_path = '175_950_ex1_local'
+
+LOCAL_PATH = os.path.join(DATA_PATH, local_path)
+#image_folder = os.path.join(DATA_PATH , r'eye_clip')
+image_folder = os.path.join(DATA_PATH , r'175_950_ex1_clip')
+
 print(image_folder)
-csv_file = os.path.join(r'C:\Users\amityu\Gel_Drop_Data\yuval_local\trackmate.csv')
+csv_file = os.path.join(LOCAL_PATH, 'trackmate.csv')
+stat_file = os.path.join(LOCAL_PATH, 'tracks.csv')
+stats_df = pd.read_csv(stat_file)
+min_frame = 0
+max_frame = 750#stats_df['MAX_FRAME'].max()
+min_duration = 15
+max_duration = 30
+max_track_no = 300
+color_list = Category20[20]
+
+tracks_list = list(stats_df[(stats_df.DURATION >=  min_duration) & (stats_df.DURATION <= max_duration) & (stats_df.MIN_FRAME >=  min_frame) & (stats_df.MIN_FRAME <= max_frame) ]['TRACK_ID'])
+tracks_list = random.sample(tracks_list, min(len(tracks_list),max_track_no))
 images = np.array(load_images(image_folder))
 tracking_data = load_tracking_data(csv_file)
-#tracks = tracking_data[tracking_data['FRAME']==488]
-#tracks.to_csv(DATA_PATH + 'frame488.csv')
-#color_mapper = LinearColorMapper(palette=Viridis256, low=np.percentile(images,5), high=np.nanpercentile(images, 90))
+tracking_data = tracking_data[tracking_data['TRACK_ID'].isin(tracks_list)]
 
 # Create ColumnDataSource for the image and tracks
 image_source = ColumnDataSource(data={'image': [images[0]]})
 track_source = ColumnDataSource(data={'x': [], 'y': []})
 selected_track_source = ColumnDataSource(data={'x': [], 'y': []})
 
+
 # Create plot
 plot = figure(width=700, height=700, x_range=(0, images[0].shape[1]), y_range=(0, images[0].shape[0]), tools="tap")
 plot.image(image='image', x=0, y=0, dw=images[0].shape[1], dh=images[0].shape[0], source=image_source)#, color_mapper=color_mapper,)
 #track_renderer = plot.circle('x', 'y', size=5, color='red', source=track_source, radius=4, fill_color=None)
-selected_track_renderer = plot.circle('x', 'y',  color='blue', source=selected_track_source,radius=4, fill_color=None)
+selected_track_renderer = plot.circle('x', 'y',  color='yellow', source=selected_track_source,radius=6, fill_color=None, line_width =3)
+full_track_renderer = plot.circle('x', 'y',  color='green', source=selected_track_source,radius=6, fill_color=None, line_width =3)
+track_lines = []
+
+for i in range(len(tracks_list)):
+    track_i = tracking_data[tracking_data['TRACK_ID'] == tracks_list[i]]
+    line = plot.line(list(track_i.POSITION_X), list(track_i.POSITION_Y),  line_color = color_list[i%len(color_list)])
+    track_lines.append(line)
+
 
 # Define additional tools
 additional_tools = [SaveTool()]
@@ -60,7 +89,7 @@ plot.add_tools(*additional_tools)
 frame_slider = Slider(start=0, end=len(images)-1, value=0, step=1, title="Frame")
 track_selector = Select(title="Track ID", value="All", options=['All'] + list(tracking_data['TRACK_ID'].unique().astype(str)))
 #show_all_tracks = Toggle(label="Show All Tracks", button_type="success", active=True)
-hold_track = Toggle(label="Hold_track", button_type="success", active=True)
+full_tracks = Toggle(label="toggle_tracks_visibility", button_type="success", active=True)
 
 frame_ahead_slider = Slider(start=0, end=1000, value=200, step=10, title="Frames Ahead")
 taptool = plot.select(type=TapTool)
@@ -105,16 +134,18 @@ def update_tracks(attr, old, new):
     #else:
     # Show selected track
     selected_track_id = track_selector.value
-    if (selected_track_id != "All") & (hold_track.active):
+    if (selected_track_id != "All"):# & (hold_track.active):
         tracks = tracking_data[(tracking_data['TRACK_ID'].astype(int) == int(selected_track_id)) &(tracking_data['FRAME'].astype(int) == int(frame))]
         #tracks = tracks.iloc[::15,:]
         #selected_tracks = tracking_data[(tracking_data['TRACK_ID'].astype(int) == int(selected_track_id)) &
         #                                   (tracking_data['FRAME'].astype(int) >= frame) &
         ##                                  (tracking_data['FRAME'].astype(int) <= frame + frames_ahead)]
+
         selected_track_source.data = {'x': tracks['POSITION_X'], 'y': tracks['POSITION_Y']}
     else:
-        tracks = tracking_data
-        #selected_track_source.data = {'x': selected_tracks['POSITION_X'], 'y': selected_tracks['POSITION_Y']}
+        tracks = tracking_data[tracking_data['FRAME'].astype(int) == int(frame)]
+
+        selected_track_source.data = {'x': tracks['POSITION_X'], 'y': tracks['POSITION_Y']}
     #track_source.data = {'x': [], 'y': []}
 
 
@@ -131,24 +162,23 @@ def update_track_selector(attr, old, new):
     update_track_selector(attr, old,new)
     update_tracks(attr, old, new)'''
 
-def toggle_hold_track(attr, old, new):
-    hold_track.label = "Hold Track" if hold_track.active else "Move tracks"
-    update_track_selector(attr, old,new)
-    update_tracks(attr, old, new)
+def toggle_full_track(attr, old, new):
+   for line in track_lines:
+       line.visible = not line.visible
 
 # Event listeners
 frame_slider.on_change('value', update_frame)
 track_selector.on_change('value', update_track_selector)
 #show_all_tracks.on_change('active', toggle_tracks)
-hold_track.on_change('active', toggle_hold_track)
+full_tracks.on_change('active', toggle_full_track)
 plot.on_event(Tap, get_coordinates)
 frame_ahead_slider.on_change('value', update_tracks)
 
 # Layout
 layout = column(
     plot,
-    row(frame_slider, track_selector,#, show_all_tracks),
-    frame_ahead_slider, hold_track)
+    row(frame_slider, track_selector,
+    frame_ahead_slider, full_tracks)
 )
 
 # Add to document
