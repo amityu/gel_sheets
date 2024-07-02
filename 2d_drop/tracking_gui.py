@@ -4,7 +4,7 @@ from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.events import Tap
 from bokeh.palettes import Category20
-
+from skimage.filters import gaussian
 import tifffile
 import pandas as pd
 import numpy as np
@@ -36,27 +36,31 @@ DATA_PATH = r'C:\Users\amityu\Gel_Drop_Data'
 
 
 
-#local_path = 'eye_local'
-local_path = '175_950_ex1_local'
-
+eye_flag = True
+if eye_flag:
+    local_path = 'eye_local'
+    image_folder = os.path.join(DATA_PATH , 'eye_clip')
+else:
+    local_path = '175_950_ex1_local'
+    image_folder = os.path.join(DATA_PATH , r'175_950_ex1_clip')
 LOCAL_PATH = os.path.join(DATA_PATH, local_path)
-#image_folder = os.path.join(DATA_PATH , r'eye_clip')
-image_folder = os.path.join(DATA_PATH , r'175_950_ex1_clip')
 
 print(image_folder)
 csv_file = os.path.join(LOCAL_PATH, 'trackmate.csv')
 stat_file = os.path.join(LOCAL_PATH, 'tracks.csv')
 stats_df = pd.read_csv(stat_file)
 min_frame = 0
-max_frame = 750#stats_df['MAX_FRAME'].max()
-min_duration = 15
-max_duration = 30
-max_track_no = 300
+max_frame = 700#stats_df['MAX_FRAME'].max()
+min_duration = 200
+max_duration = 700
+max_track_no = 350
 color_list = Category20[20]
 
 tracks_list = list(stats_df[(stats_df.DURATION >=  min_duration) & (stats_df.DURATION <= max_duration) & (stats_df.MIN_FRAME >=  min_frame) & (stats_df.MIN_FRAME <= max_frame) ]['TRACK_ID'])
 tracks_list = random.sample(tracks_list, min(len(tracks_list),max_track_no))
 images = np.array(load_images(image_folder))
+for i, image in enumerate(images):
+    images[i] = gaussian(image, sigma =1)
 tracking_data = load_tracking_data(csv_file)
 tracking_data = tracking_data[tracking_data['TRACK_ID'].isin(tracks_list)]
 
@@ -71,12 +75,12 @@ plot = figure(width=700, height=700, x_range=(0, images[0].shape[1]), y_range=(0
 plot.image(image='image', x=0, y=0, dw=images[0].shape[1], dh=images[0].shape[0], source=image_source)#, color_mapper=color_mapper,)
 #track_renderer = plot.circle('x', 'y', size=5, color='red', source=track_source, radius=4, fill_color=None)
 selected_track_renderer = plot.circle('x', 'y',  color='yellow', source=selected_track_source,radius=6, fill_color=None, line_width =3)
-full_track_renderer = plot.circle('x', 'y',  color='green', source=selected_track_source,radius=6, fill_color=None, line_width =3)
+#full_track_renderer = plot.circle('x', 'y',  color='green', source=selected_track_source,radius=6, fill_color=None, line_width =3)
 track_lines = []
 
 for i in range(len(tracks_list)):
     track_i = tracking_data[tracking_data['TRACK_ID'] == tracks_list[i]]
-    line = plot.line(list(track_i.POSITION_X), list(track_i.POSITION_Y),  line_color = color_list[i%len(color_list)])
+    line = plot.line(list(track_i.POSITION_X), list(track_i.POSITION_Y),  line_color = color_list[i%len(color_list)], line_width = 2)
     track_lines.append(line)
 
 
@@ -87,6 +91,8 @@ additional_tools = [SaveTool()]
 plot.add_tools(*additional_tools)
 # Widgets
 frame_slider = Slider(start=0, end=len(images)-1, value=0, step=1, title="Frame")
+#frame_slider = Slider(start=100, end=180, value=0, step=1, title="Frame")
+
 track_selector = Select(title="Track ID", value="All", options=['All'] + list(tracking_data['TRACK_ID'].unique().astype(str)))
 #show_all_tracks = Toggle(label="Show All Tracks", button_type="success", active=True)
 full_tracks = Toggle(label="toggle_tracks_visibility", button_type="success", active=True)
