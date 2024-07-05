@@ -26,6 +26,11 @@ def load_images(_image_folder):
         _images.append(imarray)
     return _images
 
+def get_images_list(_image_folder):
+    files = os.listdir(_image_folder)
+    files = [os.path.join(image_folder,file) for file in files if file.endswith('.tif')]
+
+    return sorted(files)
 
 def load_tracking_data(_csv_file):
     return pd.read_csv(_csv_file, skiprows=[1,2,3])
@@ -36,13 +41,24 @@ DATA_PATH = r'C:\Users\amityu\Gel_Drop_Data'
 
 
 
-eye_flag = True
-if eye_flag:
+movie = 'e561e1'
+if movie == 'eye':
     local_path = 'eye_local'
     image_folder = os.path.join(DATA_PATH , 'eye_clip')
-else:
+    track_list_file_path = r'C:\Users\amityu\Gel_Drop_Data\masks\particle_eye813_995_.csv'
+
+elif movie =='dome':
+
+    track_list_file_path = r'C:\Users\amityu\Gel_Drop_Data\masks\particle_dome530_743_.csv'
+
     local_path = '175_950_ex1_local'
-    image_folder = os.path.join(DATA_PATH , r'175_950_ex1_clip')
+    image_folder = os.path.join(DATA_PATH, r'175_950_ex1_clip')
+elif movie == 'e561e1':
+    #track_list_file_path = None# r'C:\Users\amityu\Gel_Drop_Data\masks\particle_dome530_743_.csv'
+    particle_list_flag = False
+    local_path = 'e561e1_local'
+    image_folder = os.path.join(DATA_PATH, 'e561e1_clip')
+
 LOCAL_PATH = os.path.join(DATA_PATH, local_path)
 
 print(image_folder)
@@ -50,29 +66,33 @@ csv_file = os.path.join(LOCAL_PATH, 'trackmate.csv')
 stat_file = os.path.join(LOCAL_PATH, 'tracks.csv')
 stats_df = pd.read_csv(stat_file)
 min_frame = 0
-max_frame = 700#stats_df['MAX_FRAME'].max()
+max_frame = stats_df['MAX_FRAME'].max()
 min_duration = 200
-max_duration = 700
-max_track_no = 350
+max_duration = max_frame
+max_track_no = 50
 color_list = Category20[20]
 
 tracks_list = list(stats_df[(stats_df.DURATION >=  min_duration) & (stats_df.DURATION <= max_duration) & (stats_df.MIN_FRAME >=  min_frame) & (stats_df.MIN_FRAME <= max_frame) ]['TRACK_ID'])
 tracks_list = random.sample(tracks_list, min(len(tracks_list),max_track_no))
-images = np.array(load_images(image_folder))
-for i, image in enumerate(images):
-    images[i] = gaussian(image, sigma =1)
+particle_list_flag = False
+if particle_list_flag:
+    tracks_list = pd.read_csv(track_list_file_path)['id'].to_list()
+#images = np.array(load_images(image_folder))
+images_list = get_images_list(image_folder)
+#for i, image in enumerate(images):
+#    images[i] = gaussian(image, sigma =1)
 tracking_data = load_tracking_data(csv_file)
 tracking_data = tracking_data[tracking_data['TRACK_ID'].isin(tracks_list)]
-
+img0 = tifffile.imread(images_list[0])
 # Create ColumnDataSource for the image and tracks
-image_source = ColumnDataSource(data={'image': [images[0]]})
+image_source = ColumnDataSource(data={'image': [gaussian(img0,1)]})
 track_source = ColumnDataSource(data={'x': [], 'y': []})
 selected_track_source = ColumnDataSource(data={'x': [], 'y': []})
 
 
 # Create plot
-plot = figure(width=700, height=700, x_range=(0, images[0].shape[1]), y_range=(0, images[0].shape[0]), tools="tap")
-plot.image(image='image', x=0, y=0, dw=images[0].shape[1], dh=images[0].shape[0], source=image_source)#, color_mapper=color_mapper,)
+plot = figure(width=700, height=700, x_range=(0, img0.shape[1]), y_range=(0, img0.shape[0]), tools="tap")
+plot.image(image='image', x=0, y=0, dw=img0.shape[1], dh=img0.shape[0], source=image_source)#, color_mapper=color_mapper,)
 #track_renderer = plot.circle('x', 'y', size=5, color='red', source=track_source, radius=4, fill_color=None)
 selected_track_renderer = plot.circle('x', 'y',  color='yellow', source=selected_track_source,radius=6, fill_color=None, line_width =3)
 #full_track_renderer = plot.circle('x', 'y',  color='green', source=selected_track_source,radius=6, fill_color=None, line_width =3)
@@ -90,7 +110,7 @@ additional_tools = [SaveTool()]
 # Add tools to plot
 plot.add_tools(*additional_tools)
 # Widgets
-frame_slider = Slider(start=0, end=len(images)-1, value=0, step=1, title="Frame")
+frame_slider = Slider(start=0, end=len(images_list)-1, value=0, step=1, title="Frame")
 #frame_slider = Slider(start=100, end=180, value=0, step=1, title="Frame")
 
 track_selector = Select(title="Track ID", value="All", options=['All'] + list(tracking_data['TRACK_ID'].unique().astype(str)))
@@ -102,10 +122,12 @@ taptool = plot.select(type=TapTool)
 
 # Attach the callback
 
+
 # Callbacks
 def update_frame(attr, old, new):
     frame = frame_slider.value
-    image_source.data = {'image': [images[frame]]}
+    #image_source.data = {'image': [gaussian(images[frame],1)]}
+    image_source.data = {'image': [gaussian(tifffile.imread(images_list[frame]),1)]}
     update_tracks(attr, old, new)
 
 
