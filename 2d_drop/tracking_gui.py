@@ -1,5 +1,5 @@
 from bokeh.io import curdoc
-from bokeh.models import ColumnDataSource, Slider, Select, Button, Toggle, RangeSlider, SaveTool, TapTool
+from bokeh.models import ColumnDataSource, Slider, Select, Button, Toggle, RangeSlider, SaveTool, TapTool, CheckboxGroup
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.events import Tap
@@ -95,9 +95,10 @@ plot = figure(width=700, height=700, x_range=(0, img0.shape[1]), y_range=(0, img
 plot.image(image='image', x=0, y=0, dw=img0.shape[1], dh=img0.shape[0], source=image_source)#, color_mapper=color_mapper,)
 #track_renderer = plot.circle('x', 'y', size=5, color='red', source=track_source, radius=4, fill_color=None)
 selected_track_renderer = plot.circle('x', 'y',  color='yellow', source=selected_track_source,radius=6, fill_color=None, line_width =3)
+# Define the checkbox group
+checkbox_group = CheckboxGroup(labels=["show only future born tracks", "hide dead tracks"], active=[0, 1])
 #full_track_renderer = plot.circle('x', 'y',  color='green', source=selected_track_source,radius=6, fill_color=None, line_width =3)
 track_lines = []
-
 for i in range(len(tracks_list)):
     track_i = tracking_data[tracking_data['TRACK_ID'] == tracks_list[i]]
     line = plot.line(list(track_i.POSITION_X), list(track_i.POSITION_Y),  line_color = color_list[i%len(color_list)], line_width = 2)
@@ -129,6 +130,7 @@ def update_frame(attr, old, new):
     #image_source.data = {'image': [gaussian(images[frame],1)]}
     image_source.data = {'image': [gaussian(tifffile.imread(images_list[frame]),1)]}
     update_tracks(attr, old, new)
+    update_track_selection()
 
 
 
@@ -194,6 +196,24 @@ def toggle_full_track(attr, old, new):
    for line in track_lines:
        line.visible = not line.visible
 
+def update_track_selection():
+    current_frame= frame_slider.value
+    future_born_tracks = set(stats_df[stats_df['MIN_FRAME'].astype(int) > current_frame]['TRACK_ID'].unique().astype(str))# Define a callback function for the checkbox group
+    #print(born_tracks)
+    died_tracks = set(stats_df[stats_df['MAX_FRAME'].astype(int) < current_frame]['TRACK_ID'].unique().astype(str))#
+    selected = checkbox_group.active
+    active_tracks = set(list(map(str,tracks_list)))
+    if (0 in selected) & (1  not in selected):
+        active_tracks = future_born_tracks
+
+    elif (0 not in selected) & (1  in selected):
+        active_tracks = active_tracks - died_tracks
+    elif (0  in selected) & (1 in selected):
+        active_tracks = future_born_tracks - died_tracks
+    for _i, _track_i in enumerate(tracks_list):
+         track_lines[_i].visible = str(_track_i) in active_tracks
+def checkbox_callback(attr, old, new):
+    update_track_selection()
 # Event listeners
 frame_slider.on_change('value', update_frame)
 track_selector.on_change('value', update_track_selector)
@@ -201,10 +221,10 @@ track_selector.on_change('value', update_track_selector)
 full_tracks.on_change('active', toggle_full_track)
 plot.on_event(Tap, get_coordinates)
 frame_ahead_slider.on_change('value', update_tracks)
-
+checkbox_group.on_change('active', checkbox_callback)
 # Layout
 layout = column(
-    plot,
+    row(checkbox_group,plot),
     row(frame_slider, track_selector,
     frame_ahead_slider, full_tracks)
 )
