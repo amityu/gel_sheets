@@ -338,10 +338,11 @@ def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sig
                    codec='h264', fps=4)
 
 def show_imshow_sequence_with_colorbar(image_seq, time_points,title='', col_no=5):
+    image_seq= np.array(image_seq)
     rows_no = len(time_points)//col_no + 1
     fig, axes = plt.subplots(rows_no,col_no, figsize = (30,30))
     vmin = np.nanmin(image_seq)
-    vmax = np.nanmax(image_seq)
+    vmax = np.nanmax(image_seq[np.isfinite(image_seq)])
     axes = axes.ravel()
     for i,t in enumerate(time_points):
         axes[i].imshow(image_seq[i], vmin=vmin, vmax=vmax)

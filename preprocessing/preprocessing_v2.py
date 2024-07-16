@@ -412,7 +412,7 @@ def apply_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illum
     gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float16)
     for t in trange(len(gel_transformed)):
 
-        illumination_filter = get_illumination_filter(gel[t],min_z_filter, max_z_filter, illumination_sigma)
+        illumination_filter = get_illumination_filter(gel_transformed[t],min_z_filter, max_z_filter, illumination_sigma)
 
         gel_corrected[t] = (gel_transformed[t]/illumination_filter).copy()
     return gel_corrected
@@ -437,9 +437,13 @@ def get_illumination_filter(gel_at_t, min_z_filter, max_z_filter, illumination_s
     :return: The illumination filter for the gel image at time t.
     :rtype: numpy.ndarray
     """
-    gel_slice = np.nanmean(gel_at_t[min_z_filter:max_z_filter, :, :], axis=0)
-    gel_slice[np.isnan(gel_slice)] = np.nanmean(gel_slice)
-    illumination_filter = gaussian_filter(gel_slice, sigma=illumination_sigma)
+    filter_area = gel_at_t[min_z_filter:max_z_filter, :, :].copy()
+    finite_filter = filter_area[np.isfinite(filter_area)]
+    filter_area[~np.isfinite(filter_area)] = np.nanmean(finite_filter)
+
+    gel_slice = np.nanmean(filter_area, axis=0)
+    assert np.sum(np.isnan(gel_slice))==0, 'some nans error'
+    illumination_filter = gaussian_filter(gel_slice.astype(np.float32), sigma=illumination_sigma)
     return illumination_filter
 
 
@@ -486,7 +490,7 @@ def make_numpy_from_list(gel_list, max_z):
     :return: A numpy array containing the gel arrays.
     :rtype: numpy.ndarray numpy.float 16
     """
-    gel = np.zeros((len(gel_list), max_z,*gel_list[0].shape[1:]), dtype=np.float16)
+    gel = np.zeros((len(gel_list), max_z,*gel_list[0].shape[1:]), dtype=np.float32  )
     gel[gel == 0] = np.nan
     for t in range(len(gel)):
         gel[t,:gel_list[t].shape[0],:,:] = gel_list[t]

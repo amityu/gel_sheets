@@ -12,7 +12,13 @@ from PIL import Image
 import os
 import random
 
-# Load images and tracking data
+# data for making the app available to other users
+port= 5006
+print('--------------------to open for web-----------------------------------------------')
+print('bokeh serve --show tracking_gui.py --address 0.0.0.0 --allow-websocket-origin=132.72.216.33:{}'.format(port))
+print('open ip 132.72.216.33:{}'.format(port))
+print('----------------------------------------------------------------------------------')
+# Load images and tracking data - not used
 def load_images(_image_folder):
     files = os.listdir(_image_folder)
     files = [file for file in files if file.endswith('.tif')]
@@ -26,14 +32,19 @@ def load_images(_image_folder):
         _images.append(imarray)
     return _images
 
+
+# the app loads each frame when needed so that app launches faster
 def get_images_list(_image_folder):
     files = os.listdir(_image_folder)
     files = [os.path.join(image_folder,file) for file in files if file.endswith('.tif')]
 
     return sorted(files)
 
+
+
 def load_tracking_data(_csv_file):
-    return pd.read_csv(_csv_file, skiprows=[1,2,3])
+
+    return pd.read_csv(_csv_file)
 
 
 # Initialize data
@@ -41,7 +52,7 @@ DATA_PATH = r'C:\Users\amityu\Gel_Drop_Data'
 
 
 
-movie = 'e561e1'
+movie = 'dome'
 if movie == 'eye':
     local_path = 'eye_local'
     image_folder = os.path.join(DATA_PATH , 'eye_clip')
@@ -54,17 +65,19 @@ elif movie =='dome':
     local_path = '175_950_ex1_local'
     image_folder = os.path.join(DATA_PATH, r'175_950_ex1_clip')
 elif movie == 'e561e1':
-    #track_list_file_path = None# r'C:\Users\amityu\Gel_Drop_Data\masks\particle_dome530_743_.csv'
-    particle_list_flag = False
+    #track_list_file_path = None# r'C:\Users\amityu\Gel_Drop_Data\masks\particle_5651200_1450_.csv'
+    track_list_file_path = r'C:\Users\amityu\Gel_Drop_Data\masks\particle_5651200_1450_.csv'
+    particle_list_flag = True
     local_path = 'e561e1_local'
     image_folder = os.path.join(DATA_PATH, 'e561e1_clip')
 
 LOCAL_PATH = os.path.join(DATA_PATH, local_path)
 
-print(image_folder)
 csv_file = os.path.join(LOCAL_PATH, 'trackmate.csv')
 stat_file = os.path.join(LOCAL_PATH, 'tracks.csv')
 stats_df = pd.read_csv(stat_file)
+
+# filtering tracks if particle_list flag is False
 min_frame = 0
 max_frame = stats_df['MAX_FRAME'].max()
 min_duration = 200
@@ -74,16 +87,17 @@ color_list = Category20[20]
 
 tracks_list = list(stats_df[(stats_df.DURATION >=  min_duration) & (stats_df.DURATION <= max_duration) & (stats_df.MIN_FRAME >=  min_frame) & (stats_df.MIN_FRAME <= max_frame) ]['TRACK_ID'])
 tracks_list = random.sample(tracks_list, min(len(tracks_list),max_track_no))
-particle_list_flag = False
+particle_list_flag = True
 if particle_list_flag:
     tracks_list = pd.read_csv(track_list_file_path)['id'].to_list()
-#images = np.array(load_images(image_folder))
+
 images_list = get_images_list(image_folder)
-#for i, image in enumerate(images):
-#    images[i] = gaussian(image, sigma =1)
+
 tracking_data = load_tracking_data(csv_file)
 tracking_data = tracking_data[tracking_data['TRACK_ID'].isin(tracks_list)]
+
 img0 = tifffile.imread(images_list[0])
+
 # Create ColumnDataSource for the image and tracks
 image_source = ColumnDataSource(data={'image': [gaussian(img0,1)]})
 track_source = ColumnDataSource(data={'x': [], 'y': []})
@@ -134,6 +148,7 @@ def update_frame(attr, old, new):
 
 
 
+#coosing track from cursor
 def get_coordinates(event):
     x = event.x
     y = event.y
@@ -155,28 +170,18 @@ def get_coordinates(event):
 def update_tracks(attr, old, new):
     frame = frame_slider.value
     frames_ahead = frame_ahead_slider.value
-    '''if show_all_tracks.active:
-        # Show all tracks
-        tracks = tracking_data[(tracking_data['FRAME'].astype(int) >= frame) & (tracking_data['FRAME'].astype(int) <= frame + frames_ahead)]
 
-        track_source.data = {'x': tracks['POSITION_X'], 'y': tracks['POSITION_Y']}
-        selected_track_source.data = {'x': [], 'y': []}'''
-    #else:
     # Show selected track
     selected_track_id = track_selector.value
     if (selected_track_id != "All"):# & (hold_track.active):
         tracks = tracking_data[(tracking_data['TRACK_ID'].astype(int) == int(selected_track_id)) &(tracking_data['FRAME'].astype(int) == int(frame))]
-        #tracks = tracks.iloc[::15,:]
-        #selected_tracks = tracking_data[(tracking_data['TRACK_ID'].astype(int) == int(selected_track_id)) &
-        #                                   (tracking_data['FRAME'].astype(int) >= frame) &
-        ##                                  (tracking_data['FRAME'].astype(int) <= frame + frames_ahead)]
+
 
         selected_track_source.data = {'x': tracks['POSITION_X'], 'y': tracks['POSITION_Y']}
     else:
         tracks = tracking_data[tracking_data['FRAME'].astype(int) == int(frame)]
 
         selected_track_source.data = {'x': tracks['POSITION_X'], 'y': tracks['POSITION_Y']}
-    #track_source.data = {'x': [], 'y': []}
 
 
 
@@ -187,15 +192,11 @@ def update_track_selector(attr, old, new):
     track_selector.options = ['All'] + list(current_frame_tracks)
     update_tracks(attr, old, new)  # Existing functionality
 
-'''def toggle_tracks(attr, old, new):
-    show_all_tracks.label = "Show All Tracks" if show_all_tracks.active else "Show Selected Track"
-    update_track_selector(attr, old,new)
-    update_tracks(attr, old, new)'''
-
 def toggle_full_track(attr, old, new):
    for line in track_lines:
        line.visible = not line.visible
 
+# update tracks that were future born or died
 def update_track_selection():
     current_frame= frame_slider.value
     future_born_tracks = set(stats_df[stats_df['MIN_FRAME'].astype(int) > current_frame]['TRACK_ID'].unique().astype(str))# Define a callback function for the checkbox group
