@@ -21,7 +21,8 @@ DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
 #movie = 'cca40'
 #movie = 'cca300'
 #movie = 'cca60_dist'
-movie = '160624c10'
+#movie = '160624c10'
+movie = '270524c8'
 #movie = 'cca120_am200'
 #movie ='280523 AM100 568_3'
 MOVIE_PATH = DATA_PATH +  movie + '/'
@@ -34,8 +35,8 @@ plt.plot([1,2,3,4])
 plt.savefig(image_url)
 plt.close()
 
-gel = np.load(MOVIE_PATH + 'np/gel_norm_f.npy', mmap_mode='r')#[:, 20:,80:]
-surface = np.load(MOVIE_PATH + 'np/height45_s3.npy', mmap_mode='r')#[:, 20:,80:]
+gel = np.load(MOVIE_PATH + 'np/gel_norm_before_stabilize.npy', mmap_mode='r')#[:, 20:,80:]
+surface = np.load(MOVIE_PATH + 'np/membrane45_s3.npy', mmap_mode='r')#[:, 20:,80:]
 #surface = np.load(DATA_PATH + 'boundary/{}_height_std45.0.npy'.format(movie), mmap_mode='r')
 # Replace this with your actual "surface" array
 plot_sigma = 0
@@ -63,11 +64,11 @@ def arrow(direction):
     global t, y, image_url
 
     if direction == 'up':
-        y = (y + 1) % surface.shape[1]
+        y = (y + 5) % surface.shape[1]
 
 
     elif direction == 'down':
-        y = (y - 1) % surface.shape[1]
+        y = (y - 5) % surface.shape[1]
 
     elif direction == 'left':
         t = (t - 1) % surface.shape[0]
@@ -114,7 +115,7 @@ def update_plot():
 
 if __name__ == '__main__':
 
-    app.run(debug=True, host= '0.0.0.0' , port=5045)
+    app.run(debug=False, host= '0.0.0.0' , port=5035)
     print('hello')
 
 

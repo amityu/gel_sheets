@@ -41,7 +41,7 @@ def get_ex_data(movie_path):
     with open(movie_path + 'ex_data.json', 'r') as f:
         ex_data = json.load(f)
     return ex_data
-def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, time_range=None, selem_radius=2):
+def get_surface_and_membrane(gel, add_path, number_of_mean, number_of_std = 3,threshold=np.nan, time_range=None, selem_radius=2):
     '''
     monomer_rectv1.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
     :param gel: memory map gel, it will be copied and nans will be replaced with zeros 
@@ -50,9 +50,12 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, 
     :param time_range: if None, all time points will be used
     :param selem_radius: radius of the ball used for dilation
     :return: 3d array of surface, and 3d array of membrane, dtype = int
+
+    In case gel capture all place in the array, with no room for backgroud it can fail, in this case add zeros to the array. you may use memory mapping if array too big
     '''
 
-    zeros_gel =gel.copy()
+    #zeros_gel =gel.copy()
+    zeros_gel = gel
     zeros_gel[np.isnan(zeros_gel)] = 0
 
     monomer_data_df = pd.read_csv(add_path + 'monomer_rect.csv')
@@ -69,7 +72,7 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, 
         '''mask = apply_hysteresis_threshold(zeros_gel[t,:,:,:], monomer_data_df.iloc[t]['gaussian_std']*3.5+ monomer_data_df.iloc[t]['gaussian_mean'], monomer_data_df
         .iloc[t]['gaussian_std']*3.5 + monomer_data_df.iloc[t]['gaussian_mean'])'''  # hysteriss thresholding was tried but it was not neccessary
         if np.isnan(threshold):
-            mask = zeros_gel[t,:,:,:] > monomer_data_df.iloc[t]['gaussian_std']*number_of_std + monomer_data_df.iloc[t]['gaussian_mean']
+            mask = zeros_gel[t,:,:,:] > monomer_data_df.iloc[t]['gaussian_std']*number_of_std + number_of_mean * monomer_data_df.iloc[t]['gaussian_mean']
         else:
             mask = zeros_gel[t,:,:,:] > threshold
         selem =ball(selem_radius)
@@ -81,7 +84,6 @@ def get_surface_and_membrane(gel, add_path, number_of_std = 3,threshold=np.nan, 
 
         # Get the label of the largest component (label 0 is reserved for the background)
         largest_label = np.argmax(component_sizes[1:]) + 1
-
         # Create a binary mask containing only the largest component
         cleaned_mask = connected_components == largest_label
         for i in range(h.shape[0]):
@@ -212,7 +214,7 @@ def stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coo
     return warped_image_numpy
 
 
-def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, transformation_type = 'Rigid', z_df = None, time_range = None):
+def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mask_coordinates, transformation_type = 'Rigid', z_df = None, time_range = None, register_to_first = False):
     """
     same as stabilize but with stepwise registration
     :param gel: 4d array of gel memory map
@@ -223,6 +225,7 @@ def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mas
     :param time_range: np.nan if all time points are to be stabilized, this is default
     :param z_df: dataframe with z coordinates, if None, the z coordinates will be taken from mask_coordinates
                 z_df should have columns: Z, r_size
+    :param register_to_first: if true, fixed image is always gel[0]
     :return:
     THis function save the trasformation in the PROJECT_PATH/add_data/movie/transform folder and warped images in tmp folder which needs to exist in the movie folder
     The suggested working mannaer it to check the warped images during the process
@@ -249,7 +252,7 @@ def step_stabilize(gel, movie_path, transform_path, mask_coordinates, moving_mas
 
     fixed_image = ants.from_numpy(numpy_image)
     for index, t in tqdm(enumerate(time_range)):
-        if index == 0:
+        if (index == 0) | register_to_first :
             fixed_image_index = time_range[0]
         else:
             fixed_image_index = time_range[index-1]
@@ -409,7 +412,7 @@ def apply_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illum
     :return: The corrected gel image after applying the illumination filter.
     :rtype: numpy.ndarray
     """
-    gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float16)
+    gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float32)
     for t in trange(len(gel_transformed)):
 
         illumination_filter = get_illumination_filter(gel_transformed[t],min_z_filter, max_z_filter, illumination_sigma)
@@ -536,7 +539,7 @@ def fit_monomer(gel, monomer_data_df):
             continue
         interpolated_x, smoothed_y, density, mean, std, amp = plot_data(data_corrected, bins=bins)
         i_mean_list.append(mean)
-        i_std_list.append(std)
+        i_std_list.append(np.abs(std))
     monomer_data_df['gaussian_mean'] = i_mean_list
     monomer_data_df['gaussian_std'] = i_std_list
     return monomer_data_df
