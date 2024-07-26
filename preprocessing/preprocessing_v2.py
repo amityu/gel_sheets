@@ -496,7 +496,7 @@ def make_numpy_from_list(gel_list, max_z):
     gel = np.zeros((len(gel_list), max_z,*gel_list[0].shape[1:]), dtype=np.float32  )
     gel[gel == 0] = np.nan
     for t in range(len(gel)):
-        gel[t,:gel_list[t].shape[0],:,:] = gel_list[t]
+        gel[t,:gel_list[t].shape[0],:,:] = gel_list[t].astype(np.float32)
 
     return gel
 
@@ -582,5 +582,5 @@ def plot_data(data, bins):
     interpolated_y = np.interp(new_indices, range(len(y_fitted)), y_fitted)
     interpolated_x = np.interp(new_indices, range(len(y_fitted)), x_data)
     smoothed_y = gaussian_filter(interpolated_y, sigma=15)
-    return interpolated_x, smoothed_y, density,  mu_opt, sigma_opt, amplitude_opt
+    return interpolated_x, smoothed_y, density,  mu_opt, np.abs(sigma_opt), amplitude_opt
 
