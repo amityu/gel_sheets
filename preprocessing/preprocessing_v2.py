@@ -109,6 +109,7 @@ def get_surface_and_membrane(gel, add_path, number_of_mean, number_of_std = 3,th
         membrane[t] = m#gaussian(m, sigma=1)
     return surface, membrane
 
+
 def spike(surface, sigma=2, sobel_threshold = 7.5):
     '''
 

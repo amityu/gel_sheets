@@ -288,7 +288,7 @@ def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sig
 
     This method creates an animation of gel segmentation. It takes the gel data, surface data, movie name, output path,
     y-coordinate value, plot sigma, time values, and suffix as parameters. It creates a plot with two subplots, one for the
-    gel data and one for the surface data. The gel data is updated for each time value using a function called update. The
+    gel da  ta and one for the surface data. The gel data is updated for each time value using a function called update. The
     animation is then created using the FuncAnimation class from matplotlib. Finally, the animation is saved as an AVI file
     using the specified output path and file name.
 
@@ -306,9 +306,12 @@ def animate_segmentation(gel, surface, movie_name, out_put_path, y=100, plot_sig
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (15,5))
 
-    sm = ScalarMappable(cmap='coolwarm')
-    sm.set_array(gel[:, :, y, :])
-    cbar = plt.colorbar(sm ,ax= ax2)
+    sm2 = ScalarMappable(cmap='coolwarm')
+    sm2.set_array(gel[:, :, y, :])
+    cbar2 = plt.colorbar(sm2 ,ax= ax2)
+    sm1 = ScalarMappable(cmap='coolwarm')
+    sm1.set_array(surface)
+    cbar1 = plt.colorbar(sm1 ,ax= ax1)
 
     def update(t):
         if t == int(t):

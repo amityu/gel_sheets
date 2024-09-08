@@ -492,9 +492,11 @@ def a13():
 
     # In[2]:
 
-def surface_stat_save(movie, save_plot = False, std_string=""):
-
-        surface = np.load(DATA_PATH +  movie + '/' + 'np/height{}.npy'.format(std_string))
+def surface_stat_save( movie, save_plot = False, std_string="", _DATA_PATH=None):
+        if _DATA_PATH == None:
+            _DATA_PATH = DATA_PATH
+            print('using default DATA_PATH: {}'.format(DATA_PATH))
+        surface = np.load(_DATA_PATH +  movie + '/' + 'np/height{}.npy'.format(std_string))
         mean_list = []
         std_list = []
         fluctations_list = []
@@ -510,18 +512,21 @@ def surface_stat_save(movie, save_plot = False, std_string=""):
             plt.plot(fluctations_list, label = 'fluctations')
             plt.legend()
             plt.title('Surface stats ' + movie)
-            plt.savefig(DATA_PATH +  movie + '/' +'np/' + movie+ 'surface_stats.png')
+            plt.savefig(_DATA_PATH +  movie + '/' +'np/' + movie+ 'surface_stats.png')
             plt.show()
         return df
 
 
-def surface_distribution_save(movie, channel='gel_norm', save_plot = False, std_string=""):
+def surface_distribution_save(movie, channel='gel_norm', save_plot = False, std_string="", _DATA_PATH=None):
+    if _DATA_PATH == None:
+        _DATA_PATH = DATA_PATH
+        print('using default DATA_PATH: {}'.format(DATA_PATH))
     warnings.filterwarnings(action='ignore', category=RuntimeWarning)
-    gel = np.load(DATA_PATH +  movie + '/' + 'np/%s.npy'%channel)
+    gel = np.load(_DATA_PATH +  movie + '/' + 'np/%s.npy'%channel)
     # Assuming gel is your numpy array
     #threshold = np.percentile(gel[~np.isnan(gel)], 99.8)  # Find the 99.8 percentile of all values in gel
     #gel = np.where(gel > threshold, np.nan, gel)  # Replace all values above the threshold with NaN
-    surface = np.load(DATA_PATH +  movie + '/' + 'np/height%s.npy'%std_string, mmap_mode='r')
+    surface = np.load(_DATA_PATH +  movie + '/' + 'np/height%s.npy'%std_string, mmap_mode='r')
     gel = gu.place_nan_above_surface(gel, surface)
     mean_list = []
     std_list = []

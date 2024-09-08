@@ -16,7 +16,8 @@ mu_symbol = "\u03BC"
 import cupy as cp
 import numpy as np
 import gc
-
+from numba import njit, prange
+from preprocessing import preprocessing_v2 as pp
 def histogram_cupy(data, bins, density = True, chunk_size = 50000000):
     """
     :param data: An array-like object containing the data for which the histogram needs to be computed.
@@ -193,3 +194,119 @@ def create_circle_mask(h, w, center_x, center_y, radius):
 
     mask = dist_from_center <= radius
     return mask
+
+
+
+def  create_3d_mask(membrane, spike_merged_surface, shape):
+    surface = spike_merged_surface
+    mask = np.zeros(shape, dtype= bool)
+    y_dim, x_dim = membrane.shape[1:]  # Assuming that membrane and surface have the same shape
+    z_dim = shape[1]# The size in the z-dimension would be one more than the highest values in membrane and surface
+    t_dim = shape[0]
+    for t in range(t_dim):
+        z_indices = np.arange(z_dim)[None,:, None, None]  # Creates a 1-d array and adds two dimensions
+        z_grid = np.broadcast_to(z_indices, (
+            t_dim,z_dim, y_dim, x_dim))  # Repeats the z-indices over y-dim and x-dim to create a full 3D grid
+
+        mask[t] = (z_grid[t] >= membrane[t]) & (z_grid[t] <= surface[t])
+        mask[t] = np.where(np.isnan(membrane[t]) | np.isnan(surface[t]), False, mask[t])
+
+    return mask
+
+import cupy as cp
+
+
+def gaussian_kernel_3d(size, sigma):
+    """Generates a 3D Gaussian kernel using CuPy."""
+    ax = cp.arange(-size // 2 + 1., size // 2 + 1.)
+    xx, yy, zz = cp.meshgrid(ax, ax, ax)
+    kernel = cp.exp(-(xx**2 + yy**2 + zz**2) / (2. * sigma**2))
+    return kernel / cp.sum(kernel)
+
+def apply_gaussian_filter_3d(image, kernel):
+    """Applies a 3D Gaussian filter to a 3D image using CuPy."""
+    image = cp.asarray(image)
+    size = kernel.shape[0]
+    pad_width = size // 2
+    padded_image = cp.pad(image, pad_width, mode='constant')
+    filtered_image = cp.empty_like(image)
+
+    for z in range(image.shape[0]):
+        for y in range(image.shape[1]):
+            for x in range(image.shape[2]):
+                region = padded_image[z:z + size, y:y + size, x:x + size]
+                filtered_image[z, y, x] = cp.sum(region * kernel)
+
+    return filtered_image
+
+
+
+def gaussian_kernel_3d_numba(size, sigma):
+    """Generates a 3D Gaussian kernel."""
+    ax = np.arange(-size // 2 + 1., size // 2 + 1.)
+    xx, yy, zz = np.meshgrid(ax, ax, ax)
+    kernel = np.exp(-(xx**2 + yy**2 + zz**2) / (2. * sigma**2))
+    return kernel / np.sum(kernel)
+
+def cp_gaussian_filter_3d(image, sigma):
+    """Applies a Gaussian filter to a 3D image using CuPy."""
+    kernel_size = int(2 * cp.ceil(2 * sigma) + 1)
+    kernel = gaussian_kernel_3d_numba(kernel_size, sigma)
+    return apply_gaussian_filter_3d(image, kernel)
+
+
+
+import numba as nb
+@njit(parallel=True)
+def apply_gaussian_filter_3d_numba(image, kernel):
+    """Applies a 3D Gaussian filter to a 3D image using Numba with parallel processing."""
+    size = kernel.shape[0]
+    pad_width = size // 2
+    padded_shape = (
+        image.shape[0] + 2 * pad_width,
+        image.shape[1] + 2 * pad_width,
+        image.shape[2] + 2 * pad_width
+    )
+    padded_image = np.zeros(padded_shape, dtype=image.dtype)
+
+    # Copy the original image into the center
+    for z in range(image.shape[0]):
+        for y in range(image.shape[1]):
+            for x in range(image.shape[2]):
+                padded_image[z + pad_width, y + pad_width, x + pad_width] = image[z, y, x]
+
+    # Reflect edges
+    for z in range(pad_width):
+        for y in range(image.shape[1]):
+            for x in range(image.shape[2]):
+                padded_image[z, y + pad_width, x + pad_width] = image[pad_width - z - 1, y, x]
+                padded_image[z + image.shape[0] + pad_width, y + pad_width, x + pad_width] = image[-(z + 1), y, x]
+
+    for z in range(padded_image.shape[0]):
+        for y in range(pad_width):
+            for x in range(image.shape[2]):
+                padded_image[z, y, x + pad_width] = padded_image[z, pad_width * 2 - y - 1, x + pad_width]
+                padded_image[z, y + image.shape[1] + pad_width, x + pad_width] = padded_image[z, image.shape[1] + pad_width - y - 1, x + pad_width]
+
+    for z in range(padded_image.shape[0]):
+        for y in range(padded_image.shape[1]):
+            for x in range(pad_width):
+                padded_image[z, y, x] = padded_image[z, y, pad_width * 2 - x - 1]
+                padded_image[z, y, x + image.shape[2] + pad_width] = padded_image[z, y, image.shape[2] + pad_width - x - 1]
+
+    filtered_image = np.empty_like(image)
+
+    for z in prange(image.shape[0]):
+        for y in range(image.shape[1]):
+            for x in range(image.shape[2]):
+                region = padded_image[z:z + size, y:y + size, x:x + size]
+                filtered_image[z, y, x] = np.sum(region * kernel)
+
+    return filtered_image
+
+
+def gaussian_filter_3d_numba(_image, sigma):
+    """Applies a Gaussian filter to a 3D image using Numba."""
+    kernel_size = int(2 * np.ceil(2 * sigma) + 1)
+    kernel = gaussian_kernel_3d_numba(kernel_size, sigma)
+    return apply_gaussian_filter_3d_numba(_image, kernel)
