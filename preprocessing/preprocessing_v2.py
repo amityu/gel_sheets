@@ -15,6 +15,8 @@ import ants
 from scipy.ndimage import gaussian_filter
 import os
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+from  matplotlib import animation
 
 def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
     dic = {
@@ -504,6 +506,82 @@ def make_numpy_from_list(gel_list, max_z):
 # Define the Gaussian function
 def fit_gaussian(x, mu, sigma, amplitude):
     return amplitude * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+
+
+def monomer_fit_animation(movie, gel_corrected, monomer_data_df, save_path, max_intensity =1.5, bin_number=50, y_max = 15):
+    '''
+
+    :param movie:  movie name
+    :param gel_corrected: intensity 4d numpy array
+    :param monomer_data_df: taken from monomer gui on gel_corrected
+    :param save_path: where to save animation
+    :param max_intensity: from colormap
+    :param bin_number: for histogram
+    :param y_max: y_lim on graph
+    :return:
+    '''
+    min_intensity = np.nanmin(gel_corrected)
+
+
+
+    bins = np.linspace(min_intensity, max_intensity, bin_number + 1)
+
+    # Update function for each frame
+    def update_frame(t):
+        ax.clear()
+        # getting coordinates of the selected area in gel
+        iz = monomer_data_df.at[t, 'Z']
+        iy =monomer_data_df.at[t, 'Y']
+        ix = monomer_data_df.at[t, 'X']
+        r_size = monomer_data_df.at[t, 'r_size']
+        gap_from_surface =monomer_data_df.at[t, 'gap_from_surface']
+        y_gap = monomer_data_df.at[t, 'y_gap']
+
+        # get data
+        data_corrected = gel_corrected[t, iz+gap_from_surface:iz+r_size, iy:iy+y_gap, ix:ix+r_size]
+
+
+        data_corrected = data_corrected[~np.isnan(data_corrected)]
+
+        if data_corrected.size == 0:
+            return plot,
+
+        try:
+            interpolated_x, smoothed_y, density, mean, std, amp = plot_data(data_corrected, bins=bins)
+
+            ax.set_xlabel('Intensity (a.u)', fontsize = 20)
+            ax.set_ylabel('Frequency ', fontsize = 20)
+            ax.set_ylim(0, y_max)
+            ax.set_xlim(0,3)
+            ax.set_title('Monomer Histogram\n movie %s time %d' % (movie, t ), fontsize = 20)
+
+            ax.plot(interpolated_x, smoothed_y, color='r', label='Gaussian Fit on areas without debris ')
+        except Exception as  e:
+            print(t, e, 'error')
+            return plot,
+        ax.bar(bins[:-1], density, width=np.diff(bins), align='edge', label='intensity histogram', alpha=0.5, color='b')
+        ax.legend(fontsize = 20)
+        return plot,
+
+
+    # Create a figure and axis
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111)
+
+    # Create an empty plot
+    plot = ax.bar(bins, np.ones(len(bins)))
+
+
+    # Create the animation
+    myanimation = animation.FuncAnimation(fig, update_frame, range(len(gel_corrected)), interval=1000)
+    writer = animation.FFMpegWriter(fps=1)
+
+    myanimation.save(os.path.join(save_path , '%s_monomer_fit.mp4' % movie), writer=writer)
+
+    # Display the animation
+
+
+
 
 
 def fit_monomer(gel, monomer_data_df):
