@@ -6,8 +6,8 @@ from scipy.ndimage import gaussian_filter
 from preprocessing import preprocessing_v2 as pp
 # app.py
 global y,t
-#DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-DATA_PATH ='D:/amityu/backoffice_data/'
+DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
+#DATA_PATH ='D:/amityu/backoffice_data/'
 
 #movie = 'Control'
 #movie = '130721'
@@ -15,7 +15,7 @@ DATA_PATH ='D:/amityu/backoffice_data/'
 #movie ='150721'
 #movie ='100621'
 #movie = '130721_CCA60_RAW'
-movie ='280523 AM100 568_3'
+#movie ='280523 AM100 568_3'
 #movie = 'control_1_050721'
 #movie = 'cca120'
 #movie = 'cca40'
@@ -23,7 +23,7 @@ movie ='280523 AM100 568_3'
 #movie = 'cca60_dist'
 #movie = '160624c10'
 #movie = '270524c8'
-#movie = '140824'
+movie = '140824'
 #movie = '140824long'
 #movie = 'cca120_am200'
 #movie ='280523 AM100 568_3'
@@ -37,17 +37,12 @@ plt.plot([1,2,3,4])
 plt.savefig(image_url)
 plt.close()
 
-gel = np.load(MOVIE_PATH + 'tmp/gel_norm_b.npy', mmap_mode='r')#[:, 20:,80:]
+gel = np.load(MOVIE_PATH + 'tmp/gel_norm_before_stabilize.npy', mmap_mode='r')#[:, 20:,80:]
 surface = np.load(MOVIE_PATH + 'tmp/height45_s3.npy')#[:, 20:,80:]
 #surface = np.load(DATA_PATH + 'boundary/{}_height_std45.0.npy'.format(movie), mmap_mode='r')
 # Replace this with your actual "surface" array
 plot_sigma = 0
-'''
-cca120_am200
-gel[:, :, 0:80, :] =np.nan
-surface[:, 0:80, :] = np.nan
-gel[:, :, :, 0:50] = np.nan
-surface[:, :, 0:50] = np.nan'''
+
 
 # Initialize t, y coordinates
 t = 0
@@ -126,30 +121,4 @@ if __name__ == '__main__':
 
     # Function to update the plot
     # Function to handle key presses
-
-'''# Create a figure and plot the initial surface
-fig,(ax1, ax2) = plt.subplots(1,2, figsize = (15,5))
-h = surface[0]
-
-sm = ScalarMappable(cmap='coolwarm')
-sm.set_array(h)
-cbar = plt.colorbar(sm ,ax= ax2)
-ax1.clear()
-ax2.clear()
-img = gel_corrected[t,:,y,:]
-ax1.imshow(img,origin='lower', cmap='coolwarm')
-ax1.set_xlabel('X (Pixels)')
-ax1.set_ylabel('Z (Pixels)')
-ax1.set_title('Gel Corrected by illumination filter \n y=%d'%y)
-
-ax1.plot(gaussian_filter(h[y,: ],sigma = plot_sigma ), 'y', linestyle='--')
-im= ax2.imshow(h, origin='lower', cmap='coolwarm', v_max = v_max, v_min = v_min )
-ax2.hlines(y=y, xmin=0, xmax=h.shape[0], color='b')
-
-ax2.set_xlabel('X (Pixels)')
-ax2.set_ylabel('Y (Pixels)')
-ax2.set_title('Surface computed \n y=%d'%y)
-fig.suptitle('Segmentation Time=%d ' % t)
-# Connect the key press event to the on_key function'''
-
 
