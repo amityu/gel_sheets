@@ -310,3 +310,41 @@ def gaussian_filter_3d_numba(_image, sigma):
     kernel_size = int(2 * np.ceil(2 * sigma) + 1)
     kernel = gaussian_kernel_3d_numba(kernel_size, sigma)
     return apply_gaussian_filter_3d_numba(_image, kernel)
+
+
+# getting surface intesities
+def get_surface_intensity(gel, surface):
+    '''
+
+    :param gel:
+    :param surface:  # surface or surface merged with spike
+    :return: 3d array of intensities on surface
+    '''
+    shift_min = 2
+    shift_max = 5
+    layers_range = range(-shift_max,-shift_min-1,1)
+    values_slice= np.zeros((len(list(layers_range)),gel.shape[0], gel.shape[2],gel.shape[3]))
+
+    for i,k in enumerate(layers_range):
+        values_slice[i] = gu.values_3d(gel, np.clip(surface + k,0,gel.shape[1]-1))
+
+
+    return np.nanmax(values_slice, axis=0)
+
+def get_membrane_intensity(gel, membrane):
+    '''
+
+    :param gel: 4d np array
+    :param surface:  # memrbrane height 3d np arr
+    :return: 3d array of intensities on membrane
+    '''
+    shift_min = 2
+    shift_max = 5
+    layers_range = range(shift_min,shift_max)
+    values_slice= np.zeros((len(list(layers_range)),gel.shape[0], gel.shape[2],gel.shape[3]))
+
+    for i,k in enumerate(layers_range):
+        values_slice[i] = gu.values_3d(gel, np.clip(membrane + k,0,gel.shape[1]-1))
+
+
+    return np.nanmax(values_slice, axis=0)
