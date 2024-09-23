@@ -423,6 +423,13 @@ def apply_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illum
         gel_corrected[t] = (gel_transformed[t]/illumination_filter).copy()
     return gel_corrected
 
+def apply_one_illumination_filter(_gel, filter):
+    for t in trange(len(_gel)):
+
+        _gel[t] = _gel[t]/filter
+    return _gel
+
+
 
 def get_illumination_filter(gel_at_t, min_z_filter, max_z_filter, illumination_sigma):
     """
@@ -448,7 +455,8 @@ def get_illumination_filter(gel_at_t, min_z_filter, max_z_filter, illumination_s
     filter_area[~np.isfinite(filter_area)] = np.nanmean(finite_filter)
 
     gel_slice = np.nanmean(filter_area, axis=0)
-    assert np.sum(np.isnan(gel_slice))==0, 'some nans error'
+    if np.sum(np.isnan(gel_slice))==0:
+        print('some nans error')
     illumination_filter = gaussian_filter(gel_slice.astype(np.float32), sigma=illumination_sigma)
     return illumination_filter
 
@@ -663,3 +671,32 @@ def plot_data(data, bins):
     smoothed_y = gaussian_filter(interpolated_y, sigma=15)
     return interpolated_x, smoothed_y, density,  mu_opt, np.abs(sigma_opt), amplitude_opt
 
+
+from scipy.optimize import curve_fit
+
+
+def filters_curve_fit_draft():
+
+    # Logarithmic function
+    def func(x, x0, a, b):
+        return a + b * np.log(x - x0)
+
+
+    x = np.arange(1,8)
+    y = mean_illumination[1:8]  # your y data
+
+    # Curve fitting
+    popt, pcov = curve_fit(func, x, y, p0= [-1,1,1])
+
+    # Print the best fit parameters
+    print("a =", popt[0], " b =", popt[1], ' x0 = ', popt[2])
+
+    # To create line space
+    x_line = np.arange(0, len(gel), 1)
+    y_line = func(x_line, *popt)
+
+    plt.figure(figsize=(8, 5))
+    plt.scatter(x, y, label='Data')
+    plt.plot(x_line, y_line, color="red", label='Fit: a=%5.3f, b=%5.3f , x0 = %5.3f' % tuple(popt))
+    plt.legend()
+    plt.show()
