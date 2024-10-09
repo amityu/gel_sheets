@@ -18,7 +18,7 @@ import numpy as np
 import gc
 from numba import njit, prange
 from preprocessing import preprocessing_v2 as pp
-def histogram_cupy(data, bins, density = True, chunk_size = 50000000):
+def histogram_cupy(data, bins, density = True, chunk_size = 800000000):
     """
     :param data: An array-like object containing the data for which the histogram needs to be computed.
     :param bins: The number of bins to use for the histogram. Can be an integer specifying the number of bins or a NUMPY  array specifying the bin edges.
@@ -348,3 +348,11 @@ def get_membrane_intensity(gel, membrane):
 
 
     return np.nanmax(values_slice, axis=0)
+
+@njit(nopython=True)
+def nan_correlation(v1, v2):
+    _mask = np.logical_and(~np.isnan(v1),  ~np.isnan(v2))
+    if np.sum(_mask) == 0: return 0
+    x=  v1[_mask]
+    y = v2[_mask]
+    return np.corrcoef(x,y)[0,1]

@@ -17,6 +17,7 @@ import os
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from  matplotlib import animation
+from pathlib import Path
 
 def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
     dic = {
@@ -33,6 +34,8 @@ def save_exp_data(movie_path, name, dx,dy,dz, spike_in = -1, spike_out = -1):
         json.dump(dic, f)
 
 def get_merged_spike(movie_path, ex_data):
+    if isinstance(movie_path, Path):
+            movie_path = str(movie_path) + '\\'
     surface = np.load(movie_path + 'np/height.npy')
     if ex_data['spike in']>= 0:
         spike = np.load(movie_path + 'np/spike.npy')

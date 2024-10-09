@@ -6,8 +6,7 @@ from scipy.ndimage import gaussian_filter
 from preprocessing import preprocessing_v2 as pp
 # app.py
 global y,t
-DATA_PATH = 'C:/Users/amityu/Gel_Sheet_Data/'
-#DATA_PATH ='D:/amityu/backoffice_data/'
+DATA_PATH = 'D:/Gel_Sheet_Data/'
 
 #movie = 'Control'
 #movie = '130721'
@@ -28,7 +27,7 @@ movie = '140824'
 #movie = 'cca120_am200'
 #movie ='280523 AM100 568_3'
 MOVIE_PATH = DATA_PATH +  movie + '/'
-TMP_PATH = 'C:/Users/amityu/Gel_Sheet_Graph/tmp/'
+TMP_PATH = 'D/Gel_Sheet_Graph/tmp/'
 #ex_data = pp.get_ex_data(MOVIE_PATH)
 global y,t, image_url
 
