@@ -257,7 +257,7 @@ def cp_gaussian_filter_3d(image, sigma):
 
 
 import numba as nb
-@njit(parallel=True)
+#@njit(parallel=True)
 def apply_gaussian_filter_3d_numba(image, kernel):
     """Applies a 3D Gaussian filter to a 3D image using Numba with parallel processing."""
     size = kernel.shape[0]

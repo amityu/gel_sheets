@@ -517,7 +517,7 @@ def surface_stat_save( movie, save_plot = False, std_string="", _DATA_PATH=None)
         return df
 
 
-def surface_distribution_save(movie, channel='gel_norm', save_plot = False, std_string="", _DATA_PATH=None):
+def surface_distribution_save(movie, channel='gel_norm', save_plot = False, std_string="", _DATA_PATH=None, place_nan_flag = False):
     if _DATA_PATH == None:
         _DATA_PATH = DATA_PATH
         print('using default DATA_PATH: {}'.format(DATA_PATH))
@@ -527,7 +527,8 @@ def surface_distribution_save(movie, channel='gel_norm', save_plot = False, std_
     #threshold = np.percentile(gel[~np.isnan(gel)], 99.8)  # Find the 99.8 percentile of all values in gel
     #gel = np.where(gel > threshold, np.nan, gel)  # Replace all values above the threshold with NaN
     surface = np.load(_DATA_PATH +  movie + '/' + 'np/height%s.npy'%std_string, mmap_mode='r')
-    gel = gu.place_nan_above_surface(gel, surface)
+    if place_nan_flag:
+        gel = gu.place_nan_above_surface(gel, surface)
     mean_list = []
     std_list = []
     fluctations_list = []

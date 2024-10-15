@@ -46,7 +46,7 @@ def get_ex_data(movie_path):
     with open(movie_path + 'ex_data.json', 'r') as f:
         ex_data = json.load(f)
     return ex_data
-def get_surface_and_membrane(gel, add_path, number_of_mean, number_of_std = 3,threshold=np.nan, time_range=None, selem_radius=2):
+def get_surface_and_membrane(gel, add_path, number_of_mean=0, number_of_std = 3,threshold=np.nan, time_range=None, selem_radius=2):
     '''
     monomer_rectv1.csv needs to be placed in the movie_path/np folder with gaussian_mean and gaussian_std columns, values from curve fitting
     :param gel: memory map gel, it will be copied and nans will be replaced with zeros 
@@ -426,6 +426,49 @@ def apply_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illum
         gel_corrected[t] = (gel_transformed[t]/illumination_filter).copy()
     return gel_corrected
 
+def apply_norm_illumination_filter(gel_transformed, min_z_filter, max_z_filter, illumination_sigma):
+    """
+    Apply an illumination filter to the given gel_transformed image.
+
+    :param gel_transformed: The transformed gel image to apply the filter to.
+    :type gel_transformed: numpy.ndarray
+
+    :param min_z_filter: The minimum z value to consider when creating the illumination filter.
+    :type min_z_filter: float
+
+    :param max_z_filter: The maximum z value to consider when creating the illumination filter.
+    :type max_z_filter: float
+
+    :param illumination_sigma: The sigma value to use for the illumination filter.
+    :type illumination_sigma: float
+
+    :return: The corrected gel image after applying the illumination filter.
+    :rtype: numpy.ndarray
+    """
+    gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float32)
+    for t in trange(len(gel_transformed)):
+
+        illumination_filter = get_illumination_filter(gel_transformed[t],min_z_filter, max_z_filter, illumination_sigma)
+        illumination_filter /= np.nanmean(illumination_filter)
+        gel_corrected[t] = (gel_transformed[t]/illumination_filter).copy()
+    return gel_corrected
+
+def apply_illumination_filter_list(gel_transformed, filter_list):
+    """
+    Apply an illumination filter to the given gel_transformed image.
+
+    :param gel_transformed: The transformed gel image to apply the filter to.
+    :type gel_transformed: numpy.ndarray
+    :param filter_list:  list of 2d filters size gel_transformed[t].shape[2], gel_transformed[t].shape[3]
+    :return: The corrected gel image after applying the illumination filter.
+    :rtype: numpy.ndarray
+    """
+    gel_corrected = np.zeros(gel_transformed.shape, dtype=np.float32)
+    for t in trange(len(gel_transformed)):
+
+        gel_corrected[t] = (gel_transformed[t]/filter_list[t]).copy()
+    return gel_corrected
+
 def apply_one_illumination_filter(_gel, filter):
     for t in trange(len(_gel)):
 
@@ -462,6 +505,45 @@ def get_illumination_filter(gel_at_t, min_z_filter, max_z_filter, illumination_s
         print('some nans error')
     illumination_filter = gaussian_filter(gel_slice.astype(np.float32), sigma=illumination_sigma)
     return illumination_filter
+
+def get_normalized_illumination_filter(gel_at_t, min_z_filter, max_z_filter, illumination_sigma):
+    """
+    Calculate the illumination filter for a gel image at time t.
+
+    :param gel_at_t: The gel image at time t.
+    :type gel_at_t: numpy.ndarray
+
+    :param min_z_filter: The minimum z-filter value.
+    :type min_z_filter: int
+
+    :param max_z_filter: The maximum z-filter value.
+    :type max_z_filter: int
+
+    :param illumination_sigma: The standard deviation for the Gaussian filter used for illumination correction.
+    :type illumination_sigma: float
+
+    :return: The illumination filter for the gel image at time t. where filter mean = 1
+    :rtype: numpy.ndarray
+    """
+    filter_area = gel_at_t[min_z_filter:max_z_filter, :, :].copy()
+    finite_filter = filter_area[np.isfinite(filter_area)]
+    filter_area[~np.isfinite(filter_area)] = np.nanmean(finite_filter)
+
+    gel_slice = np.nanmean(filter_area, axis=0)
+    if np.sum(np.isnan(gel_slice))==0:
+        print('some nans error')
+    illumination_filter = gaussian_filter(gel_slice.astype(np.float32), sigma=illumination_sigma)
+    illumination_filter /= np.nanmean(illumination_filter)
+    return illumination_filter
+
+def get_slice_mean(gel, min_z_filter, max_z_filter):
+    """
+    :param gel: 4D numpy array, representing gel data
+    :param min_z_filter: Integer, the minimum z-index to be included in the slice.
+    :param max_z_filter: Integer, the maximum z-index to be included in the slice.
+    :return: 1d Float array, the mean value of the specified slice of the 3D array for each time t.
+    """
+    return np.nanmean(gel[:,min_z_filter:max_z_filter, :, :], axis=(1,2,3))
 
 
 def get_file_list(files_path, parse = lambda x:x.split('_')[-2][1:]):
@@ -563,7 +645,7 @@ def monomer_fit_animation(movie, gel_corrected, monomer_data_df, save_path, max_
             ax.set_xlabel('Intensity (a.u)', fontsize = 20)
             ax.set_ylabel('Frequency ', fontsize = 20)
             ax.set_ylim(0, y_max)
-            ax.set_xlim(0,3)
+            ax.set_xlim(50,300)
             ax.set_title('Monomer Histogram\n movie %s time %d' % (movie, t ), fontsize = 20)
 
             ax.plot(interpolated_x, smoothed_y, color='r', label='Gaussian Fit on areas without debris ')

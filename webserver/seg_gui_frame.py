@@ -36,9 +36,11 @@ plt.plot([1,2,3,4])
 plt.savefig(image_url)
 plt.close()
 
-gel = np.load(MOVIE_PATH + 'tmp/gel_norm_before_stabilize.npy', mmap_mode='r')#[:, 20:,80:]
-surface = np.load(MOVIE_PATH + 'tmp/height45_s3.npy')#[:, 20:,80:]
-#surface = np.load(DATA_PATH + 'boundary/{}_height_std45.0.npy'.format(movie), mmap_mode='r')
+#gel = np.load(MOVIE_PATH + 'tmp/gel_norm_before_stabilize.npy', mmap_mode='r')#[:, 20:,80:]
+gel = np.load(MOVIE_PATH + 'np/gel_norm.npy', mmap_mode='r')#[:, 20:,80:]
+
+#surface = np.load(MOVIE_PATH + 'tmp/height45_s3.npy')#[:, 20:,80:]
+surface = np.load(MOVIE_PATH + 'np/height.npy'.format(movie), mmap_mode='r')
 # Replace this with your actual "surface" array
 plot_sigma = 0
 
